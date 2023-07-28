@@ -18,7 +18,7 @@ impl HitRecord {
     
 }
 
-pub trait Hittable : Send  {
+pub trait Hittable : Send {
     fn hit(&self, r:&Ray, t_min:f64, t_max:f64) -> HitRecord;
-    fn clone_dyn(&self) -> Box<dyn Hittable>;
+    fn clone_dyn(&self) -> Box<dyn Hittable + Sync>;
 }

@@ -1,17 +1,16 @@
 use crate::hittable::*;
 use crate::ray::*;
-use crate::sphere::*;
 
 #[derive(Default, Clone)]
 pub struct HittableList {
-    pub objects: Vec<Sphere>,
+    pub objects: Vec<Box<dyn Hittable + Sync>>,
 }
 
-// impl Clone for Box<dyn Hittable> {
-//     fn clone(&self) -> Self {
-//         self.clone_dyn()
-//     }
-// }
+impl Clone for Box<dyn Hittable + Sync> {
+    fn clone(&self) -> Self {
+        self.clone_dyn()
+    }
+}
 
 impl HittableList {
     pub fn hit(&self, r:&Ray, t_min:f64, t_max:f64) -> HitRecord {

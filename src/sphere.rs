@@ -8,8 +8,8 @@ pub struct Sphere {
     pub radius: f64,
 }
 
-impl Sphere {
-    pub fn hit(&self, r:&Ray, t_min:f64, t_max:f64) -> HitRecord{
+impl Hittable for Sphere {
+    fn hit(&self, r:&Ray, t_min:f64, t_max:f64) -> HitRecord{
 
         let mut rec = HitRecord{ ..HitRecord::default() };
 
@@ -44,8 +44,8 @@ impl Sphere {
         return rec;
     }
 
-    // fn clone_dyn(&self) -> Box<dyn Hittable> {
-    //     Box::new(self.clone())
-    // }
+    fn clone_dyn(&self) -> Box<dyn Hittable + Sync> {
+        Box::new(self.clone())
+    }
 
 }

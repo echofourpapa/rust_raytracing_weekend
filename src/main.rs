@@ -72,8 +72,8 @@ fn main() -> Result<(), std::io::Error> {
 
     // World
     let mut world = HittableList{ ..HittableList::default()};
-    world.objects.push(Sphere{ center: Point3{x:0.0, y: 0.0, z:-1.0}, radius: 0.5});
-    world.objects.push(Sphere{ center: Point3{x:0.0, y: -100.5, z:-1.0}, radius: 100.0});
+    world.objects.push(Box::new(Sphere{ center: Point3{x:0.0, y: 0.0, z:-1.0}, radius: 0.5}));
+    world.objects.push(Box::new(Sphere{ center: Point3{x:0.0, y: -100.5, z:-1.0}, radius: 100.0}));
 
     // Camera
     let cam = Camera::new();
@@ -84,15 +84,15 @@ fn main() -> Result<(), std::io::Error> {
     let size = image_width * image_width * 3;
     let image_buffer = Arc::new(Mutex::new(vec![0; size as usize]));
 
-    let thingy = Arc::new(world);
+    let world_arc = Arc::new(world);
     for y in 0..image_height {
-
+        print!("\r Rendering line {} of {}", y+1, image_height);
         children_threads.push(thread::spawn( {
             let clone = Arc::clone(&image_buffer);
-            let w_c = thingy.clone();
+            let world_clone = world_arc.clone();
             move || {
                 let mut v = clone.lock().unwrap();
-                print!("\r Rendering line {} of {}", y+1, image_height);
+                
                 for x in 0..image_width {
                     let mut pixel_color = Color{..Color::default()};
                     
@@ -102,7 +102,7 @@ fn main() -> Result<(), std::io::Error> {
                         let u: f64 = (x as f64 + a) / ((image_width-1) as f64);
                         let v: f64 = (y as f64 + b) / ((image_height-1) as f64);
                         let r = cam.get_ray(u, v);
-                        pixel_color += ray_color(&r, &w_c);
+                        pixel_color += ray_color(&r, &world_clone);
                     }
                     let pos: i32 = (x + y * image_width) * 3;
                     write_color(&mut v, &pixel_color, samples_per_pixel, pos as usize);
@@ -111,10 +111,13 @@ fn main() -> Result<(), std::io::Error> {
         }));
         stdout().flush().unwrap();
     }
-    
+    print!("\n");
+    let mut t_count = 0;
     for child in children_threads {
         // Wait for the thread to finish. Returns a result.
         let _ = child.join().unwrap();
+        t_count += 1;
+        print!("\r Finished line {} of {}", t_count, image_height);
     }
 
     print!("\n");
