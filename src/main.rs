@@ -68,7 +68,7 @@ fn main() -> Result<(), std::io::Error> {
     let aspect_ratio = 16.0/9.0;
     let image_width: i32 = 1920;
     let image_height: i32 = (image_width as f64 / aspect_ratio) as i32;
-    let samples_per_pixel = 100;
+    let samples_per_pixel = 256;
 
     // World
     let mut world = HittableList{ ..HittableList::default()};
@@ -91,11 +91,8 @@ fn main() -> Result<(), std::io::Error> {
             let clone = Arc::clone(&image_buffer);
             let world_clone = world_arc.clone();
             move || {
-                let mut v = clone.lock().unwrap();
-                
                 for x in 0..image_width {
                     let mut pixel_color = Color{..Color::default()};
-                    
                     for _s in 0..samples_per_pixel {
                         let a: f64 = rand::thread_rng().gen();
                         let b: f64 = rand::thread_rng().gen();
@@ -105,6 +102,7 @@ fn main() -> Result<(), std::io::Error> {
                         pixel_color += ray_color(&r, &world_clone);
                     }
                     let pos: i32 = (x + y * image_width) * 3;
+                    let mut v = clone.lock().unwrap();
                     write_color(&mut v, &pixel_color, samples_per_pixel, pos as usize);
                 }
             }
@@ -113,11 +111,12 @@ fn main() -> Result<(), std::io::Error> {
     }
     print!("\n");
     let mut t_count = 0;
+
     for child in children_threads {
         // Wait for the thread to finish. Returns a result.
         let _ = child.join().unwrap();
         t_count += 1;
-        print!("\r Finished line {} of {}", t_count, image_height);
+        print!("\r Finishing line {} of {}", t_count, image_height);
     }
 
     print!("\n");
