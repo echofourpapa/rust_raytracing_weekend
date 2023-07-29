@@ -1,13 +1,14 @@
 use crate::vec3::*;
 use crate::ray::*;
+use crate::material::*;
 
 #[derive(Copy, Clone, Default)]
 pub struct HitRecord {
     pub p:Point3,
     pub normal: Vec3,
+    pub mat_idx: usize,
     pub t: f64,
-    pub front_face: bool,
-    pub hit: bool,
+    pub front_face: bool
 }
 
 impl HitRecord {
@@ -19,6 +20,12 @@ impl HitRecord {
 }
 
 pub trait Hittable : Send {
-    fn hit(&self, r:&Ray, t_min:f64, t_max:f64) -> HitRecord;
+    fn hit(&self, r:&Ray, t_min:f64, t_max:f64, rec: &mut HitRecord) -> bool;
     fn clone_dyn(&self) -> Box<dyn Hittable + Sync>;
+}
+
+impl Clone for Box<dyn Hittable + Sync> {
+    fn clone(&self) -> Self {
+        self.clone_dyn()
+    }
 }
