@@ -145,6 +145,14 @@ pub fn reflect(v: &Vec3, n: &Vec3) -> Vec3 {
     *v - (*n * 2.0 * dot(v,n))
 }
 
+pub fn refract(v: &Vec3, n: &Vec3, ior:f64) -> Vec3 {
+    let cos_theta = dot(&-*v, n).min(1.0);
+    let r_out_perp = (*v + cos_theta * *n ) * ior;
+    let r_out_parallel = -(( 1.0- r_out_perp.length_squared()).abs().sqrt()) * *n;
+
+    return r_out_perp + r_out_parallel;
+}
+
 pub fn random_in_unit_sphere() -> Vec3 {
     loop {
         let p = Vec3{ 
@@ -173,3 +181,15 @@ pub fn randon_in_hemisphere(normal: &Vec3) -> Vec3 {
 
 pub type Point3 = Vec3;
 pub type Color = Vec3;
+
+impl Vec3 {
+    pub fn one() -> Vec3 {
+        Vec3{x:1.0, y:1.0, z:1.0 }
+    }
+}
+
+impl Color {
+    pub fn white() -> Color {
+        Vec3::one()
+    }
+}

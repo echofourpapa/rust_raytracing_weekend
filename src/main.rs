@@ -1,4 +1,4 @@
-use std::{io::{stdout, Write}, sync::{Arc, Mutex}, time::Instant};
+use std::{io::{stdout, Write}, sync::{Arc, Mutex}, time::Instant, env};
 use hittable::HitRecord;
 use rand::Rng;
 use std::thread;
@@ -75,11 +75,11 @@ fn main() -> Result<(), std::io::Error> {
     let ground_mat_idx = world.materials.len();
     world.materials.push(Box::new(Lambertian{albedo: Color{x:0.8, y: 0.8, z:0.0}}));
     let center_mat_idx = world.materials.len();
-    world.materials.push(Box::new(Lambertian{albedo: Color{x:0.7, y: 0.3, z:0.3}}));
+    world.materials.push(Box::new(Lambertian{albedo: Color{x:0.1, y: 0.2, z:0.5}}));
     let left_mat_idx = world.materials.len();
-    world.materials.push(Box::new(Metal::new( Color{x:0.8, y: 0.8, z:0.8}, 0.3)));
+    world.materials.push(Box::new(Dielectric{ior:1.5}));
     let right_mat_idx = world.materials.len();
-    world.materials.push(Box::new(Metal::new(Color{x:0.8, y: 0.6, z:0.2}, 1.0)));
+    world.materials.push(Box::new(Metal::new(Color{x:0.8, y: 0.6, z:0.2}, 0.15)));
 
     world.objects.push(Box::new(Sphere{ center: Point3{x:0.0, y: -100.5, z:-1.0}, radius: 100.0, mat_idx:ground_mat_idx}));
     world.objects.push(Box::new(Sphere{ center: Point3{x:0.0, y: 0.0, z:-1.0}, radius: 0.5, mat_idx:center_mat_idx}));
@@ -88,7 +88,7 @@ fn main() -> Result<(), std::io::Error> {
     
 
     // Camera
-    let cam = Camera::new();
+    let cam = Camera::new(90.0, aspect_ratio);
 
     let mut children_threads = vec![];
 
@@ -132,9 +132,10 @@ fn main() -> Result<(), std::io::Error> {
     }
 
     print!("\n");
-    let file_path: &str = "D:/code/rust/raytracing_weekend/test_image.tga";
-    println!("Saving to: {}", file_path);
-    tga::write_tga_file(image_width, image_height, &*image_buffer.lock().unwrap(), file_path)?;
+    let mut file_path = env::current_dir().unwrap();
+    file_path.set_file_name("test_image.tga");
+    println!("Saving to: {}", file_path.display());
+    tga::write_tga_file(image_width, image_height, &*image_buffer.lock().unwrap(), &file_path)?;
     println!("Done! Completed in {:?}", start.elapsed());
     Ok(())
 }

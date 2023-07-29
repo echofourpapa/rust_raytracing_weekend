@@ -1,6 +1,7 @@
 use std::fs::File;
 use std::io::Write;
 use std::mem;
+use std::path::PathBuf;
 use std::slice;
 
 unsafe fn struct_to_u8_slice<T>(s: &T) -> &[u8] {
@@ -65,7 +66,7 @@ fn get_tga_header(width: i32, height: i32) -> tga_header {
     header
 }
 
-pub fn write_tga_file(width: i32, height: i32, image_data: &Vec<u8>, file_path: &str) -> Result<(), std::io::Error> {
+pub fn write_tga_file(width: i32, height: i32, image_data: &Vec<u8>, file_path: &PathBuf) -> Result<(), std::io::Error> {
 
     let mut file = File::create(file_path)?;
 
