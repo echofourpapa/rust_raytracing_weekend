@@ -11,6 +11,13 @@ pub struct Vec3 {
 
 
 impl Vec3 {
+    pub fn one() -> Vec3 {
+        Vec3{x:1.0, y:1.0, z:1.0 }
+    }
+
+    pub fn up() -> Vec3 {
+        Vec3{x:0.0, y:1.0, z:0.0 }
+    }
 
     pub fn length(self: &Vec3) -> f64 {
         self.length_squared().sqrt()
@@ -148,7 +155,9 @@ pub fn reflect(v: &Vec3, n: &Vec3) -> Vec3 {
 pub fn refract(v: &Vec3, n: &Vec3, ior:f64) -> Vec3 {
     let cos_theta = dot(&-*v, n).min(1.0);
     let r_out_perp = (*v + cos_theta * *n ) * ior;
-    let r_out_parallel = -(( 1.0- r_out_perp.length_squared()).abs().sqrt()) * *n;
+    let g = 1.0- r_out_perp.length_squared();
+    let h = g.abs().sqrt();
+    let r_out_parallel = -h * *n;
 
     return r_out_perp + r_out_parallel;
 }
@@ -179,14 +188,21 @@ pub fn randon_in_hemisphere(normal: &Vec3) -> Vec3 {
     }
 }
 
-pub type Point3 = Vec3;
-pub type Color = Vec3;
-
-impl Vec3 {
-    pub fn one() -> Vec3 {
-        Vec3{x:1.0, y:1.0, z:1.0 }
+pub fn random_in_unit_disk() -> Vec3 {
+    loop {
+        let p = Vec3{ 
+            x:rand::thread_rng().gen_range(-1.0..1.0),
+            y:rand::thread_rng().gen_range(-1.0..1.0),
+            z: 0.0};
+        if p.length_squared() >= 1.0 {
+            continue;
+        }
+        return p;
     }
 }
+
+pub type Point3 = Vec3;
+pub type Color = Vec3;
 
 impl Color {
     pub fn white() -> Color {

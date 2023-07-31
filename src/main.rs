@@ -86,9 +86,19 @@ fn main() -> Result<(), std::io::Error> {
     world.objects.push(Box::new(Sphere{ center: Point3{x:-1.0, y: 0.0, z:-1.0}, radius: 0.5, mat_idx:left_mat_idx}));
     world.objects.push(Box::new(Sphere{ center: Point3{x:1.0, y: 0.0, z:-1.0}, radius: 0.5, mat_idx:right_mat_idx}));
     
-
     // Camera
-    let cam = Camera::new(90.0, aspect_ratio);
+    let cam_origin = Point3{x:3.0, y:3.0, z:2.0};
+    let cam_target = Point3{x:0.0, y:0.0, z:-1.0};
+    let dist_to_focus = (cam_origin - cam_target).length();
+    let cam = Camera::new(
+        cam_origin,
+        cam_target, 
+        Vec3::up(), 
+        20.0, 
+        aspect_ratio,
+        2.0,
+        dist_to_focus
+    );
 
     let mut children_threads = vec![];
 
