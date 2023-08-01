@@ -63,7 +63,7 @@ fn main() -> Result<(), std::io::Error> {
     let aspect_ratio = 16.0/9.0;
     let image_width: i32 = 1920;
     let image_height: i32 = (image_width as f64 / aspect_ratio) as i32;
-    let samples_per_pixel = 512;
+    let samples_per_pixel = 100;
     let max_depth = 50;
 
     
@@ -138,9 +138,10 @@ fn main() -> Result<(), std::io::Error> {
         let prog: f64 = finished as f64 / total_possible_threads as f64;
         let t = start.elapsed().as_secs_f64();
         let estimate = (t/finished as f64) * total_possible_threads as f64;
-        print!("\r{} Active, {} Queued, {:.2}% Complete, Running time: {:.2}s, Time Remaining {}",
+        print!("\r{} Active, {} Queued, {} total, {:.2}% Complete, Running time: {}, Time Remaining {}",
             pool.active_count(), 
             pool.queued_count(),
+            total_possible_threads,
             prog * 100.0,
             seconds_to_hhmmss(t),
             seconds_to_hhmmss(estimate - t)
