@@ -4,13 +4,18 @@ use rand::Rng;
 
 #[derive(Copy, Clone, Default)]
 pub struct Vec3 {
-    pub x: f64,
-    pub y: f64,
-    pub z: f64,
+    x: f64,
+    y: f64,
+    z: f64,
 }
 
 
 impl Vec3 {
+
+    pub fn zero() -> Vec3 {
+        Vec3{x:0.0, y:0.0, z:0.0 }
+    }
+
     pub fn one() -> Vec3 {
         Vec3{x:1.0, y:1.0, z:1.0 }
     }
@@ -34,6 +39,34 @@ impl Vec3 {
             z:rand::thread_rng().gen_range(min..=max)
         }
     }   
+
+    pub fn new(x:f64, y:f64, z:f64) -> Vec3 {
+        Vec3 { x:x, y: y, z: z }
+    }
+
+    pub fn x(self: &Vec3) -> f64 {
+        self.x
+    }
+
+    pub fn y(self: &Vec3) -> f64 {
+        self.y
+    }
+
+    pub fn z(self: &Vec3) -> f64 {
+        self.z
+    }
+
+    pub fn set_x(self: &mut Vec3, v:f64) {
+        self.x = v;
+    }
+
+    pub fn set_y(self: &mut Vec3, v:f64) {
+        self.y = v;
+    }
+
+    pub fn set_z(self: &mut Vec3, v:f64) {
+        self.z = v;
+    }
 
     pub fn length(self: &Vec3) -> f64 {
         self.length_squared().sqrt()

@@ -35,20 +35,18 @@ pub struct Dielectric {
 
 impl Metal {
     pub fn new(albedo:Color, roughness:f64) -> Metal {
-        Metal{albedo:albedo, roughness: Saturate(roughness) }
+        Metal{albedo:albedo, roughness: saturate(roughness) }
     }
 }
 
 impl Material for Lambertian {
-    fn scatter(&self, ray_in: &Ray, rec: &HitRecord, color: &mut Color, scattered: &mut Ray) -> bool {
+    fn scatter(&self, _ray_in: &Ray, rec: &HitRecord, color: &mut Color, scattered: &mut Ray) -> bool {
         let scatter_direction = randon_in_hemisphere(&rec.normal);
 
         scattered.origin = rec.p;
         scattered.direction = if scatter_direction.near_zero() {rec.normal} else {scatter_direction} ;
 
-        color.x = self.albedo.x;
-        color.y = self.albedo.y;
-        color.z = self.albedo.z;
+        *color = self.albedo;
 
         return true;
     }
@@ -66,9 +64,7 @@ impl Material for Metal {
         scattered.origin = rec.p;
         scattered.direction = reflected + self.roughness * randon_in_hemisphere(&rec.normal);
 
-        color.x = self.albedo.x;
-        color.y = self.albedo.y;
-        color.z = self.albedo.z;
+        *color = self.albedo;
 
         return dot(&scattered.direction, &rec.normal) > 0.0;
     }
@@ -86,10 +82,8 @@ fn reflectence(cos:f64, ref_idx:f64) -> f64{
 
 impl Material for Dielectric {
     fn scatter(&self, ray_in: &Ray, rec: &HitRecord, color: &mut Color, scattered: &mut Ray) -> bool {
-        let c = Color::white();
-        color.x = c.x;
-        color.y = c.y;
-        color.z = c.z;
+
+        *color = Color::white();
 
         let refraction_ratio = if rec.front_face {1.0/self.ior} else {self.ior};
 
@@ -98,7 +92,7 @@ impl Material for Dielectric {
         let cos_theta = dot(&-dir, &rec.normal).min(1.0);
         let sin_theta = (1.0 - cos_theta * cos_theta).sqrt();
 
-        let mut direction = Vec3::one();
+        let direction;
         let cannot_refract = refraction_ratio * sin_theta > 1.0;
         let rnd_dbl = rand::thread_rng().gen();
         if cannot_refract || reflectence(cos_theta, refraction_ratio) > rnd_dbl {

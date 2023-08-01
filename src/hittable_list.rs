@@ -36,18 +36,18 @@ impl HittableList {
 pub fn random_world() -> HittableList {
     let mut world = HittableList{..HittableList::default()};
     
-    let ground_mat_idx = world.create_material(Box::new(Lambertian{albedo: Color{x:0.5, y: 0.5, z:0.5}}));
-    world.objects.push(Box::new(Sphere{ center: Point3{x:0.0, y: -1000.0, z:-1.0}, radius: 1000.0, mat_idx:ground_mat_idx}));
+    let ground_mat_idx = world.create_material(Box::new(Lambertian{albedo: Color::new(0.5, 0.5,0.5)}));
+    world.objects.push(Box::new(Sphere{ center: Point3::new(0.0, -1000.0, -1.0), radius: 1000.0, mat_idx:ground_mat_idx}));
 
-    let test_point = Point3{x:4.0, y: 0.2, z:0.0};
+    let test_point = Point3::new(4.0, 0.2, 0.0);
 
     for a in -11..11 {
         for b in -11..11 {
-            let center = Point3 {
-                x:rand::thread_rng().gen_range(0.0..=0.9) + a as f64,
-                y:0.2,
-                z:rand::thread_rng().gen_range(0.0..=0.9) + b as f64
-            };
+            let center = Point3::new(
+                rand::thread_rng().gen_range(0.0..=0.9) + a as f64,
+                0.2,
+                rand::thread_rng().gen_range(0.0..=0.9) + b as f64
+            );
 
             let choose_mat = rand::thread_rng().gen_range(0.0..=1.0);
 
@@ -79,13 +79,13 @@ pub fn random_world() -> HittableList {
 
     
 
-    let left_mat_idx = world.create_material(Box::new(Lambertian{albedo: Color{x:0.4, y: 0.2, z:0.1}}));
+    let left_mat_idx = world.create_material(Box::new(Lambertian{albedo: Color::new(0.4, 0.2, 0.1)}));
     let center_mat_idx = world.create_material(Box::new(Dielectric{ior:1.5}));
-    let right_mat_idx = world.create_material(Box::new(Metal::new(Color{x:0.7, y: 0.6, z:0.5}, 0.0)));
+    let right_mat_idx = world.create_material(Box::new(Metal::new(Color::new(0.7, 0.6, 0.5), 0.0)));
 
-    world.objects.push(Box::new(Sphere{ center: Point3{x:-4.0, y:1.0, z:0.0}, radius: 1.0, mat_idx:left_mat_idx}));
-    world.objects.push(Box::new(Sphere{ center: Point3{x:0.0, y: 1.0, z:0.0}, radius: 1.0, mat_idx:center_mat_idx}));
-    world.objects.push(Box::new(Sphere{ center: Point3{x:4.0, y: 1.0, z:0.0}, radius: 1.0, mat_idx:right_mat_idx}));
+    world.objects.push(Box::new(Sphere{ center: Point3::new(-4.0, 1.0, 0.0), radius: 1.0, mat_idx:left_mat_idx}));
+    world.objects.push(Box::new(Sphere{ center: Point3::new( 0.0, 1.0, 0.0), radius: 1.0, mat_idx:center_mat_idx}));
+    world.objects.push(Box::new(Sphere{ center: Point3::new( 4.0, 1.0, 0.0), radius: 1.0, mat_idx:right_mat_idx}));
     
     world
 }
