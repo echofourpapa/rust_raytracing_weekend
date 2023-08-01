@@ -1,4 +1,4 @@
-use std::ops;
+use std::{ops, fmt};
 
 use rand::Rng;
 
@@ -18,6 +18,22 @@ impl Vec3 {
     pub fn up() -> Vec3 {
         Vec3{x:0.0, y:1.0, z:0.0 }
     }
+
+    pub fn random() -> Vec3 {
+        Vec3{ 
+            x:rand::thread_rng().gen_range(0.0..=1.0),
+            y:rand::thread_rng().gen_range(0.0..=1.0),
+            z:rand::thread_rng().gen_range(0.0..=1.0)
+        }
+    }   
+
+    pub fn random_range(min:f64, max:f64) -> Vec3 {
+        Vec3{ 
+            x:rand::thread_rng().gen_range(min..=max),
+            y:rand::thread_rng().gen_range(min..=max),
+            z:rand::thread_rng().gen_range(min..=max)
+        }
+    }   
 
     pub fn length(self: &Vec3) -> f64 {
         self.length_squared().sqrt()
@@ -131,6 +147,12 @@ impl ops::Neg for Vec3 {
     }
 }
 
+impl fmt::Display for Vec3 {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "({}, {}, {})", self.x, self.y, self.z)
+    }
+}
+
 pub fn dot(u: &Vec3, v: &Vec3) -> f64{
     u.x*v.x + u.y*v.y + u.z*v.z
 }
@@ -165,9 +187,9 @@ pub fn refract(v: &Vec3, n: &Vec3, ior:f64) -> Vec3 {
 pub fn random_in_unit_sphere() -> Vec3 {
     loop {
         let p = Vec3{ 
-            x:rand::thread_rng().gen_range(-1.0..1.0),
-            y:rand::thread_rng().gen_range(-1.0..1.0),
-            z:rand::thread_rng().gen_range(-1.0..1.0)};
+            x:rand::thread_rng().gen_range(-1.0..=1.0),
+            y:rand::thread_rng().gen_range(-1.0..=1.0),
+            z:rand::thread_rng().gen_range(-1.0..=1.0)};
         if p.length_squared() >= 1.0 {
             continue;
         }
@@ -191,8 +213,8 @@ pub fn randon_in_hemisphere(normal: &Vec3) -> Vec3 {
 pub fn random_in_unit_disk() -> Vec3 {
     loop {
         let p = Vec3{ 
-            x:rand::thread_rng().gen_range(-1.0..1.0),
-            y:rand::thread_rng().gen_range(-1.0..1.0),
+            x:rand::thread_rng().gen_range(-1.0..=1.0),
+            y:rand::thread_rng().gen_range(-1.0..=1.0),
             z: 0.0};
         if p.length_squared() >= 1.0 {
             continue;

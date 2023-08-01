@@ -2,6 +2,7 @@ use std::{io::{stdout, Write}, sync::{Arc, Mutex}, time::Instant, env};
 use hittable::HitRecord;
 use rand::Rng;
 use std::thread;
+use threadpool::ThreadPool;
 
 use ray::*;
 use vec3::*;
@@ -64,43 +65,32 @@ fn main() -> Result<(), std::io::Error> {
     let aspect_ratio = 16.0/9.0;
     let image_width: i32 = 1920;
     let image_height: i32 = (image_width as f64 / aspect_ratio) as i32;
-    let samples_per_pixel = 256;
+    let samples_per_pixel = 512;
     let max_depth = 50;
 
     let start = Instant::now();
 
     // World
-    let mut world = HittableList{ ..HittableList::default()};
-
-    let ground_mat_idx = world.materials.len();
-    world.materials.push(Box::new(Lambertian{albedo: Color{x:0.8, y: 0.8, z:0.0}}));
-    let center_mat_idx = world.materials.len();
-    world.materials.push(Box::new(Lambertian{albedo: Color{x:0.1, y: 0.2, z:0.5}}));
-    let left_mat_idx = world.materials.len();
-    world.materials.push(Box::new(Dielectric{ior:1.5}));
-    let right_mat_idx = world.materials.len();
-    world.materials.push(Box::new(Metal::new(Color{x:0.8, y: 0.6, z:0.2}, 0.15)));
-
-    world.objects.push(Box::new(Sphere{ center: Point3{x:0.0, y: -100.5, z:-1.0}, radius: 100.0, mat_idx:ground_mat_idx}));
-    world.objects.push(Box::new(Sphere{ center: Point3{x:0.0, y: 0.0, z:-1.0}, radius: 0.5, mat_idx:center_mat_idx}));
-    world.objects.push(Box::new(Sphere{ center: Point3{x:-1.0, y: 0.0, z:-1.0}, radius: 0.5, mat_idx:left_mat_idx}));
-    world.objects.push(Box::new(Sphere{ center: Point3{x:1.0, y: 0.0, z:-1.0}, radius: 0.5, mat_idx:right_mat_idx}));
-    
+    let mut world = random_world();
+   
     // Camera
-    let cam_origin = Point3{x:3.0, y:3.0, z:2.0};
-    let cam_target = Point3{x:0.0, y:0.0, z:-1.0};
-    let dist_to_focus = (cam_origin - cam_target).length();
+    let cam_origin = Point3{x:13.0, y:2.0, z:3.0};
+    let cam_target = Point3{x:0.0, y:0.0, z:0.0};
+
     let cam = Camera::new(
         cam_origin,
         cam_target, 
         Vec3::up(), 
         20.0, 
         aspect_ratio,
-        2.0,
-        dist_to_focus
+        0.01,
+        10.0
     );
 
-    let mut children_threads = vec![];
+    // let mut children_threads = vec![];
+
+    let max_threads = thread::available_parallelism().unwrap().get() - 1;
+    let pool = ThreadPool::new(max_threads);
 
     println!("Image size: {}x{}", image_width, image_height);
     let size = image_width * image_width * 3;
@@ -109,15 +99,36 @@ fn main() -> Result<(), std::io::Error> {
     let world_arc = Arc::new(world);
     for y in 0..image_height {
         print!("\r Rendering line {} of {}", y+1, image_height);
-        children_threads.push(thread::spawn( {
+        // children_threads.push(thread::spawn( {
+        //     let clone = Arc::clone(&image_buffer);
+        //     let world_clone = world_arc.clone();
+        //     move || {
+        //         for x in 0..image_width {
+        //             let mut pixel_color = Color{..Color::default()};
+        //             for _s in 0..samples_per_pixel {
+        //                 let a: f64 = rand::thread_rng().gen_range(0.0..=1.0);
+        //                 let b: f64 = rand::thread_rng().gen_range(0.0..=1.0);
+        //                 let u: f64 = (x as f64 + a) / ((image_width-1) as f64);
+        //                 let v: f64 = (y as f64 + b) / ((image_height-1) as f64);
+        //                 let r = cam.get_ray(u, v);
+        //                 pixel_color += ray_color(&r, &world_clone, max_depth);
+        //             }
+        //             let pos: i32 = (x + y * image_width) * 3;
+        //             let mut v = clone.lock().unwrap();
+        //             write_color(&mut v, &pixel_color, samples_per_pixel, pos as usize);
+        //         }
+        //     }
+        // }));
+
+        pool.execute( {
             let clone = Arc::clone(&image_buffer);
             let world_clone = world_arc.clone();
             move || {
                 for x in 0..image_width {
                     let mut pixel_color = Color{..Color::default()};
                     for _s in 0..samples_per_pixel {
-                        let a: f64 = rand::thread_rng().gen();
-                        let b: f64 = rand::thread_rng().gen();
+                        let a: f64 = rand::thread_rng().gen_range(0.0..=1.0);
+                        let b: f64 = rand::thread_rng().gen_range(0.0..=1.0);
                         let u: f64 = (x as f64 + a) / ((image_width-1) as f64);
                         let v: f64 = (y as f64 + b) / ((image_height-1) as f64);
                         let r = cam.get_ray(u, v);
@@ -127,19 +138,21 @@ fn main() -> Result<(), std::io::Error> {
                     let mut v = clone.lock().unwrap();
                     write_color(&mut v, &pixel_color, samples_per_pixel, pos as usize);
                 }
+                print!("\r Finishing line {} of {}", y+1, image_height);
             }
-        }));
+        });
         stdout().flush().unwrap();
     }
     print!("\nWaiting for threads to finish.\n");
-    let mut t_count = 0;
+    pool.join();
+    // let mut t_count = 0;
 
-    for child in children_threads {
-        // Wait for the thread to finish. Returns a result.
-        let _ = child.join().unwrap();
-        t_count += 1;
-        print!("\r Finishing line {} of {}", t_count, image_height);
-    }
+    // for child in children_threads {
+    //     // Wait for the thread to finish. Returns a result.
+    //     let _ = child.join().unwrap();
+    //     t_count += 1;
+    //     print!("\r Finishing line {} of {}", t_count, image_height);
+    // }
 
     print!("\n");
     let mut file_path = env::current_dir().unwrap();
