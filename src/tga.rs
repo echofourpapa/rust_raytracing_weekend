@@ -4,15 +4,13 @@ use std::mem;
 use std::path::PathBuf;
 use std::slice;
 
+
+// https://gist.github.com/jonvaldes/607fbc380f816d205afb#file-test-rs-L16
 unsafe fn struct_to_u8_slice<T>(s: &T) -> &[u8] {
     let data_ptr: *const u8 = mem::transmute(s);
     slice::from_raw_parts(data_ptr, mem::size_of::<T>())
 }
 
-unsafe fn slice_to_u8_slice<T>(s: &[T]) -> &[u8] {
-    let data_ptr: *const u8 = mem::transmute(&s[0]);
-    slice::from_raw_parts(data_ptr, mem::size_of::<T>() * s.len())
-}
 
 #[repr(C, packed)]
 #[derive(Default)]

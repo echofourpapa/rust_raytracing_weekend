@@ -49,7 +49,7 @@ impl Camera {
         let offset: Vec3 = self.u * rd.x + self.v * rd.y;
         
         Ray{
-            origin: self.origin,
+            origin: self.origin + offset,
             direction: self.lower_left_corner + s * self.horizontal + t * self.vertical - self.origin - offset,
         }
     }

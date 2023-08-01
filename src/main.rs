@@ -83,7 +83,7 @@ fn main() -> Result<(), std::io::Error> {
         Vec3::up(), 
         20.0, 
         aspect_ratio,
-        0.01,
+        0.1,
         10.0
     );
 
