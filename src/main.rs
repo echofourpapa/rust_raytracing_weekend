@@ -23,16 +23,12 @@ mod common;
 
 fn write_color(buffer: &mut Vec<u8>, color:&Color, spp: u32, pos:usize) {
 
-    let scale = 1.0 / (spp as f64);
-    let scaled_color = *color as Vec3 * scale;
+    let scale: f64 = 1.0 / (spp as f64);
+    let scaled_color: Vec3 = (*color as Vec3 * scale).sqrt();
 
-    let r = scaled_color.x().sqrt();
-    let g = scaled_color.y().sqrt();
-    let b = scaled_color.z().sqrt();
-
-    buffer[pos]   =  (255.0 * saturate(b)) as u8;
-    buffer[pos+1] =  (255.0 * saturate(g)) as u8;
-    buffer[pos+2] =  (255.0 * saturate(r)) as u8;
+    buffer[pos]   =  (255.0 * saturate(scaled_color.b())) as u8;
+    buffer[pos+1] =  (255.0 * saturate(scaled_color.g())) as u8;
+    buffer[pos+2] =  (255.0 * saturate(scaled_color.r())) as u8;
 }
 
 fn ray_color(r: &Ray, world: &HittableList, depth: i32) -> Color {
@@ -41,7 +37,7 @@ fn ray_color(r: &Ray, world: &HittableList, depth: i32) -> Color {
         return Color::zero();
     }
 
-    let mut rec = HitRecord{..HitRecord::default()};
+    let mut rec: HitRecord = HitRecord{..HitRecord::default()};
 
     if  world.hit(r, 0.001, f64::INFINITY, &mut rec) {
         let mut scattered: Ray = Ray{..Ray::default()};
@@ -60,22 +56,21 @@ fn ray_color(r: &Ray, world: &HittableList, depth: i32) -> Color {
 fn main() -> Result<(), std::io::Error> {
 
     // Image
-    let aspect_ratio = 16.0/9.0;
-    let image_width: i32 = 1920;
-    let image_height: i32 = (image_width as f64 / aspect_ratio) as i32;
-    let samples_per_pixel = 100;
-    let max_depth = 50;
-
     
+    let image_width: i32 = 1920;
+    let image_height: i32 = 1080;
+    let aspect_ratio: f64 = image_width as f64 / image_height as f64;
+    let samples_per_pixel: u32 = 256;
+    let max_depth: i32 = 50;
 
     // World
-    let world = random_world();
+    let world: HittableList = random_world();
    
     // Camera
-    let cam_origin = Point3::new(13.0, 2.0, 3.0);
-    let cam_target = Point3::new(0.0, 0.0, 0.0);
+    let cam_origin: Vec3 = Point3::new(13.0, 2.0, 3.0);
+    let cam_target: Vec3 = Point3::new(0.0, 0.0, 0.0);
 
-    let cam = Camera::new(
+    let cam: Camera = Camera::new(
         cam_origin,
         cam_target, 
         Vec3::up(), 
@@ -92,36 +87,36 @@ fn main() -> Result<(), std::io::Error> {
 
     println!("Image size: {}x{}", image_width, image_height);
     let size = image_width * image_width * 3;
-    let image_buffer = Arc::new(Mutex::new(vec![0; size as usize]));
+    let image_buffer: Arc<Mutex<Vec<u8>>> = Arc::new(Mutex::new(vec![0; size as usize]));
 
-    let world_arc = Arc::new(world);
+    let world_arc: Arc<HittableList> = Arc::new(world);
 
-    let line_step = image_width / max_threads as i32;
+    let line_step: i32 = image_width / max_threads as i32;
 
     // Start timer
-    let start = Instant::now();
-    let st = start.elapsed().as_secs_f64();
+    let start: Instant = Instant::now();
+    let _st: f64 = start.elapsed().as_secs_f64();
 
     for y in 0..image_height {
         for i in 0..line_step {
             pool.execute( {
-                let clone = Arc::clone(&image_buffer);
-                let world_clone = world_arc.clone();
+                let clone: Arc<Mutex<Vec<u8>>> = Arc::clone(&image_buffer);
+                let world_clone: Arc<HittableList> = world_arc.clone();
                 move || {
-                    let scanline_start = (i * line_step).min(image_width);
-                    let scanline_end = (scanline_start + line_step).min(image_width);
+                    let scanline_start: i32 = (i * line_step).min(image_width);
+                    let scanline_end: i32 = (scanline_start + line_step).min(image_width);
                     for x in scanline_start..scanline_end {
-                        let mut pixel_color = Color::zero();
+                        let mut pixel_color: Vec3 = Color::zero();
                         for _s in 0..samples_per_pixel {
                             let a: f64 = rand::thread_rng().gen_range(0.0..=1.0);
                             let b: f64 = rand::thread_rng().gen_range(0.0..=1.0);
                             let u: f64 = (x as f64 + a) / ((image_width-1) as f64);
                             let v: f64 = (y as f64 + b) / ((image_height-1) as f64);
-                            let r = cam.get_ray(u, v);
+                            let r: Ray = cam.get_ray(u, v);
                             pixel_color += ray_color(&r, &world_clone, max_depth);
                         }
                         let pos: i32 = (x + y * image_width) * 3;
-                        let mut v = clone.lock().unwrap();
+                        let mut v: std::sync::MutexGuard<'_, Vec<u8>> = clone.lock().unwrap();
                         write_color(&mut v, &pixel_color, samples_per_pixel, pos as usize);
                     }
                 }
@@ -136,8 +131,8 @@ fn main() -> Result<(), std::io::Error> {
         let total:usize = pool.active_count() + pool.queued_count();
         let finished: i32 = total_possible_threads - total as i32;
         let prog: f64 = finished as f64 / total_possible_threads as f64;
-        let t = start.elapsed().as_secs_f64();
-        let estimate = (t/finished as f64) * total_possible_threads as f64;
+        let t: f64 = start.elapsed().as_secs_f64();
+        let estimate: f64 = if finished > 0 {(t/finished as f64) * total_possible_threads as f64} else {0.0};
         print!("\r{} Active, {} Queued, {} total, {:.2}% Complete, Running time: {}, Time Remaining {}",
             pool.active_count(), 
             pool.queued_count(),
@@ -153,7 +148,7 @@ fn main() -> Result<(), std::io::Error> {
     pool.join();
 
     print!("\n");
-    let mut file_path = env::current_dir().unwrap();
+    let mut file_path: std::path::PathBuf = env::current_dir().unwrap();
     file_path.set_file_name("test_image.tga");
     println!("Saving to: {}", file_path.display());
     tga::write_tga_file(image_width, image_height, &*image_buffer.lock().unwrap(), &file_path)?;

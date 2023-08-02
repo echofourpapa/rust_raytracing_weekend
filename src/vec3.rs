@@ -80,6 +80,14 @@ impl Vec3 {
         *self = normalize(*self);
     }
 
+    pub fn sqrt(self: &Vec3) -> Vec3 {
+        Vec3{ 
+            x: self.x.sqrt(),
+            y: self.y.sqrt(),
+            z: self.z.sqrt(),
+        }
+    }
+
     pub fn near_zero(self: &Vec3) -> bool {
         self.x.abs() < f64::EPSILON && self.y.abs() < f64::EPSILON && self.z.abs() < f64::EPSILON
     }
@@ -199,7 +207,7 @@ pub fn cross(u: &Vec3, v: &Vec3) -> Vec3{
 }
 
 pub fn normalize(v: Vec3) -> Vec3 {
-    let l = v.length();
+    let l: f64 = v.length();
     v / l
 }
 
@@ -208,18 +216,18 @@ pub fn reflect(v: &Vec3, n: &Vec3) -> Vec3 {
 }
 
 pub fn refract(v: &Vec3, n: &Vec3, ior:f64) -> Vec3 {
-    let cos_theta = dot(&-*v, n).min(1.0);
-    let r_out_perp = (*v + cos_theta * *n ) * ior;
-    let g = 1.0- r_out_perp.length_squared();
-    let h = g.abs().sqrt();
-    let r_out_parallel = -h * *n;
+    let cos_theta: f64 = dot(&-*v, n).min(1.0);
+    let r_out_perp: Vec3 = (*v + cos_theta * *n ) * ior;
+    let g: f64 = 1.0- r_out_perp.length_squared();
+    let h: f64 = g.abs().sqrt();
+    let r_out_parallel: Vec3 = -h * *n;
 
     return r_out_perp + r_out_parallel;
 }
 
 pub fn random_in_unit_sphere() -> Vec3 {
     loop {
-        let p = Vec3{ 
+        let p: Vec3 = Vec3{ 
             x:rand::thread_rng().gen_range(-1.0..=1.0),
             y:rand::thread_rng().gen_range(-1.0..=1.0),
             z:rand::thread_rng().gen_range(-1.0..=1.0)};
@@ -235,7 +243,7 @@ pub fn random_unit_vector() -> Vec3 {
 }
 
 pub fn randon_in_hemisphere(normal: &Vec3) -> Vec3 {
-    let rnd_unit = random_unit_vector();
+    let rnd_unit: Vec3 = random_unit_vector();
     if dot(&rnd_unit, normal) > 0.0 {
         return rnd_unit;
     } else {
@@ -245,7 +253,7 @@ pub fn randon_in_hemisphere(normal: &Vec3) -> Vec3 {
 
 pub fn random_in_unit_disk() -> Vec3 {
     loop {
-        let p = Vec3{ 
+        let p: Vec3 = Vec3{ 
             x:rand::thread_rng().gen_range(-1.0..=1.0),
             y:rand::thread_rng().gen_range(-1.0..=1.0),
             z: 0.0};
@@ -262,5 +270,17 @@ pub type Color = Vec3;
 impl Color {
     pub fn white() -> Color {
         Vec3::one()
+    }
+
+    pub fn r(self: &Vec3) -> f64 {
+        self.x
+    }
+
+    pub fn g(self: &Vec3) -> f64 {
+        self.y
+    }
+
+    pub fn b(self: &Vec3) -> f64 {
+        self.z
     }
 }
