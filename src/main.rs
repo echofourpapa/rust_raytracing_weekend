@@ -1,8 +1,9 @@
-use std::{io::{stdout, Write}, sync::{Arc, Mutex}, time::{Instant, Duration}, env};
+use std::{io::{stdout, Write}, sync::{Arc, Mutex}, time::{Instant, Duration}, fs};
 use hittable::HitRecord;
 use rand::Rng;
 use std::thread;
 use threadpool::ThreadPool;
+use clap::Parser;
 
 use ray::*;
 use vec3::*;
@@ -53,15 +54,54 @@ fn ray_color(r: &Ray, world: &HittableList, depth: i32) -> Color {
     Color::one()*(1.0-t) + Color::new(0.5, 0.7, 1.0)*t
 }
 
+
+#[derive(Parser, Debug)]
+#[command(author, version, about, long_about=None)]
+struct Args{
+    #[arg(long, long_help="Output image path.  Only TGA output is supported.", default_value="image.tga")]
+    output: std::path::PathBuf,
+
+    #[arg(long, long_help="Output image width.", default_value_t=1920)]
+    width: i32,
+
+    #[arg(long, long_help="Output image height.", default_value_t=1080)]
+    height: i32,
+
+    #[arg(long, long_help="Samples per pixel.", default_value_t=128)]
+    spp: u32,
+
+    #[arg(long, long_help="Max ray bounce depth.", default_value_t=50)]
+    max_depth: i32
+}
+
+fn validate_path(path: &std::path::PathBuf) -> bool {
+    if path.extension().is_none() {
+        let suggestion = path.with_extension("tga");
+        println!("{} is missing an extension. Did you mean {}?", path.display(), suggestion.display());
+        return false;
+    } else {
+        if path.extension().unwrap().to_ascii_lowercase() != "tga" {
+            println!("Only TGA format is supported.");
+            return false;
+        }
+    }
+    path.has_root() || path.is_relative()
+}
+
 fn main() -> Result<(), std::io::Error> {
 
-    // Image
-    
-    let image_width: i32 = 1920;
-    let image_height: i32 = 1080;
+    let args = Args::parse();
+
+    if !validate_path(&args.output) {
+        return Ok(());
+    }
+
+    // Image    
+    let image_width: i32 = args.width;
+    let image_height: i32 = args.height;
     let aspect_ratio: f64 = image_width as f64 / image_height as f64;
-    let samples_per_pixel: u32 = 256;
-    let max_depth: i32 = 50;
+    let samples_per_pixel: u32 = args.spp;
+    let max_depth: i32 = args.max_depth;
 
     // World
     let world: HittableList = random_world();
@@ -80,13 +120,11 @@ fn main() -> Result<(), std::io::Error> {
         10.0
     );
 
-    // let mut children_threads = vec![];
-
-    let max_threads = thread::available_parallelism().unwrap().get() - 1;
+    let max_threads: usize = thread::available_parallelism().unwrap().get() - 1;
     let pool = ThreadPool::new(max_threads);
 
     println!("Image size: {}x{}", image_width, image_height);
-    let size = image_width * image_width * 3;
+    let size: i32 = image_width * image_width * 3;
     let image_buffer: Arc<Mutex<Vec<u8>>> = Arc::new(Mutex::new(vec![0; size as usize]));
 
     let world_arc: Arc<HittableList> = Arc::new(world);
@@ -148,10 +186,14 @@ fn main() -> Result<(), std::io::Error> {
     pool.join();
 
     print!("\n");
-    let mut file_path: std::path::PathBuf = env::current_dir().unwrap();
-    file_path.set_file_name("test_image.tga");
-    println!("Saving to: {}", file_path.display());
-    tga::write_tga_file(image_width, image_height, &*image_buffer.lock().unwrap(), &file_path)?;
+    println!("Saving to: {}", args.output.display());
+
+    let dir: std::path::PathBuf = args.output.with_file_name("");
+    if !(dir.exists() || dir.as_os_str().is_empty()) {
+        fs::create_dir_all(dir)?
+    }
+
+    tga::write_tga_file(image_width, image_height, &*image_buffer.lock().unwrap(), &args.output)?;
     println!("Done! Completed in {:?}", start.elapsed());
     Ok(())
 }
