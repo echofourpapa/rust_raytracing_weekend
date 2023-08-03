@@ -1,3 +1,5 @@
+use rand::Rng;
+
 use crate::vec3::*;
 use crate::ray::*;
 use crate::common::*;
@@ -11,11 +13,12 @@ pub struct Camera {
     u: Vec3,
     v: Vec3,
     _w: Vec3,
-    len_radius: f64
+    len_radius: f64,
+    delta_time: f64
 }
 
 impl Camera {
-    pub fn new(origin:Point3, look_at:Point3, up:Vec3, vfov:f64, aspect_ratio:f64, aperture: f64, focus_dist:f64) -> Camera {
+    pub fn new(origin:Point3, look_at:Point3, up:Vec3, vfov:f64, aspect_ratio:f64, aperture: f64, focus_dist:f64, delta_time:f64) -> Camera {
         let theta: f64 = degrees_to_radians(vfov);
         let h: f64 = (theta/2.0).tan();
 
@@ -40,7 +43,8 @@ impl Camera {
             u: u,
             v: v,
             _w: w,
-            len_radius: len_rad
+            len_radius: len_rad,
+            delta_time: delta_time
         }
     }
 
@@ -51,7 +55,7 @@ impl Camera {
         Ray::new(
             self.origin + offset,
             self.lower_left_corner + s * self.horizontal + t * self.vertical - self.origin - offset,
-            0.0
+            rand::thread_rng().gen_range(0.0..=self.delta_time)
         )
     }
 }

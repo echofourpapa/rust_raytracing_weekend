@@ -58,7 +58,7 @@ fn ray_color(r: &Ray, world: &HittableList, depth: i32) -> Color {
 #[derive(Parser, Debug)]
 #[command(author, version, about, long_about=None)]
 struct Args{
-    #[arg(long, long_help="Output image path.  Only TGA output is supported.", default_value="image.tga")]
+    #[arg(long, long_help="Output image path.  Only TGA output is supported.", default_value="output/image.tga")]
     output: std::path::PathBuf,
 
     #[arg(long, long_help="Output image width.", default_value_t=1920)]
@@ -67,7 +67,7 @@ struct Args{
     #[arg(long, long_help="Output image height.", default_value_t=1080)]
     height: i32,
 
-    #[arg(long, long_help="Samples per pixel.", default_value_t=128)]
+    #[arg(long, long_help="Samples per pixel.", default_value_t=256)]
     spp: u32,
 
     #[arg(long, long_help="Max ray bounce depth.", default_value_t=50)]
@@ -117,7 +117,8 @@ fn main() -> Result<(), std::io::Error> {
         20.0, 
         aspect_ratio,
         0.1,
-        10.0
+        10.0,
+        1.0
     );
 
     let max_threads: usize = thread::available_parallelism().unwrap().get() - 1;
@@ -194,6 +195,6 @@ fn main() -> Result<(), std::io::Error> {
     }
 
     tga::write_tga_file(image_width, image_height, &*image_buffer.lock().unwrap(), &args.output)?;
-    println!("Done! Completed in {:?}", start.elapsed());
+    println!("Done! Completed in {}", seconds_to_hhmmss(start.elapsed().as_secs_f64()));
     Ok(())
 }

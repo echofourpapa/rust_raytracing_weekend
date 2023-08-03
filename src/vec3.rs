@@ -225,6 +225,10 @@ pub fn refract(v: &Vec3, n: &Vec3, ior:f64) -> Vec3 {
     return r_out_perp + r_out_parallel;
 }
 
+pub fn lerp(x: &Vec3, y: &Vec3, s: f64) -> Vec3 {
+    (*x * (1.0-s)) + (*y * s)
+}
+
 pub fn random_in_unit_sphere() -> Vec3 {
     loop {
         let p: Vec3 = Vec3{ 

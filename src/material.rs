@@ -40,11 +40,12 @@ impl Metal {
 }
 
 impl Material for Lambertian {
-    fn scatter(&self, _ray_in: &Ray, rec: &HitRecord, color: &mut Color, scattered: &mut Ray) -> bool {
+    fn scatter(&self, ray_in: &Ray, rec: &HitRecord, color: &mut Color, scattered: &mut Ray) -> bool {
         let scatter_direction = randon_in_hemisphere(&rec.normal);
 
         scattered.origin = rec.p;
         scattered.direction = if scatter_direction.near_zero() {rec.normal} else {scatter_direction} ;
+        scattered.time = ray_in.time;
 
         *color = self.albedo;
 
@@ -63,6 +64,7 @@ impl Material for Metal {
 
         scattered.origin = rec.p;
         scattered.direction = reflected + self.roughness * randon_in_hemisphere(&rec.normal);
+        scattered.time = ray_in.time;
 
         *color = self.albedo;
 
@@ -103,6 +105,8 @@ impl Material for Dielectric {
 
         scattered.origin = rec.p;
         scattered.direction = direction;
+        scattered.time = ray_in.time;
+        
         return true;
     }
 

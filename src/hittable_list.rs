@@ -57,7 +57,20 @@ pub fn random_world() -> HittableList {
                     let albedo:Color = Color::random() * Color::random();
                     let mat: Box<Lambertian> = Box::new(Lambertian{albedo: albedo});
                     let mat_idx = world.create_material(mat);
-                    world.objects.push(Box::new(Sphere{ center: center, radius: 0.2, mat_idx:mat_idx}));
+
+                    let center2 = center + Point3::new(
+                        0.0,
+                        rand::thread_rng().gen_range(0.0..=0.5) as f64,
+                        0.0
+                    );
+
+                    world.objects.push(Box::new(MovingSphere{ 
+                        start_pos: center, 
+                        end_pos: center2, 
+                        radius: 0.2, 
+                        mat_idx:mat_idx,
+                        time: 1.0
+                    }));
 
                 } else if choose_mat < 0.95 {
                     // Metal
