@@ -1,5 +1,5 @@
 use std::{io::{stdout, Write}, sync::{Arc, Mutex}, time::{Instant, Duration}, fs};
-use hittable::HitRecord;
+use hittable::{HitRecord, Hittable};
 use rand::Rng;
 use std::thread;
 use threadpool::ThreadPool;
@@ -20,6 +20,7 @@ mod hittable_list;
 mod camera;
 mod material;
 mod common;
+mod aabb;
 
 
 fn write_color(buffer: &mut Vec<u8>, color:&Color, spp: u32, pos:usize) {

@@ -1,6 +1,7 @@
 use crate::vec3::*;
 use crate::ray::*;
 use crate::hittable::*;
+use crate::aabb::*;
 
 #[derive(Copy, Clone)]
 pub struct Sphere {
@@ -39,6 +40,12 @@ impl Hittable for Sphere {
         rec.mat_idx = self.mat_idx;
 
         return true;
+    }
+
+    fn bounding_box(&self, _delta: f64, out_box: &mut AABB) -> bool {
+        out_box.min = self.center - Vec3::new(self.radius, self.radius, self.radius);
+        out_box.max = self.center + Vec3::new(self.radius, self.radius, self.radius);
+        true
     }
 
     fn clone_dyn(&self) -> Box<dyn Hittable + Sync> {
@@ -92,6 +99,22 @@ impl Hittable for MovingSphere {
         rec.mat_idx = self.mat_idx;
 
         return true;
+    }
+
+    fn bounding_box(&self, delta: f64, out_box: &mut AABB) -> bool {
+        let box0 = AABB{ 
+            min: self.center(0.0) - Vec3::new(self.radius, self.radius, self.radius),
+            max: self.center(0.0) + Vec3::new(self.radius, self.radius, self.radius)
+        };
+
+        let box1 = AABB{ 
+            min: self.center(delta) - Vec3::new(self.radius, self.radius, self.radius),
+            max: self.center(delta) + Vec3::new(self.radius, self.radius, self.radius)
+        };
+        let big_box = surrounding_box(&box0, &box1);
+        out_box.min = big_box.min;
+        out_box.max = big_box.max;
+        true
     }
 
     fn clone_dyn(&self) -> Box<dyn Hittable + Sync> {
