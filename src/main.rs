@@ -10,6 +10,8 @@ use vec3::*;
 use hittable_list::*;
 use camera::*;
 use common::*;
+use world::*;
+use bvh::*;
 
 mod tga;
 mod vec3;
@@ -21,6 +23,8 @@ mod camera;
 mod material;
 mod common;
 mod aabb;
+mod world;
+mod bvh;
 
 
 fn write_color(buffer: &mut Vec<u8>, color:&Color, spp: u32, pos:usize) {
@@ -32,29 +36,6 @@ fn write_color(buffer: &mut Vec<u8>, color:&Color, spp: u32, pos:usize) {
     buffer[pos+1] =  (255.0 * saturate(scaled_color.g())) as u8;
     buffer[pos+2] =  (255.0 * saturate(scaled_color.r())) as u8;
 }
-
-fn ray_color(r: &Ray, world: &HittableList, depth: i32) -> Color {
-
-    if depth <= 0 {
-        return Color::zero();
-    }
-
-    let mut rec: HitRecord = HitRecord{..HitRecord::default()};
-
-    if  world.hit(r, 0.001, f64::INFINITY, &mut rec) {
-        let mut scattered: Ray = Ray{..Ray::default()};
-        let mut attenuation: Color = Color::zero();
-        let mat_idx: usize = rec.mat_idx;
-        if world.materials[mat_idx].scatter(r, &rec, &mut attenuation, &mut scattered) {
-            return attenuation * ray_color(&scattered, world, depth-1); 
-        }
-        return Color::zero();
-    }
-    let unit_direction = normalize(r.direction);
-    let t = 0.5 * (unit_direction.y() + 1.0);
-    Color::one()*(1.0-t) + Color::new(0.5, 0.7, 1.0)*t
-}
-
 
 #[derive(Parser, Debug)]
 #[command(author, version, about, long_about=None)]
@@ -105,7 +86,8 @@ fn main() -> Result<(), std::io::Error> {
     let max_depth: i32 = args.max_depth;
 
     // World
-    let world: HittableList = random_world();
+    let world: World = random_world();
+    let world_arc: Arc<World> = Arc::new(world);
    
     // Camera
     let cam_origin: Vec3 = Point3::new(13.0, 2.0, 3.0);
@@ -129,7 +111,7 @@ fn main() -> Result<(), std::io::Error> {
     let size: i32 = image_width * image_width * 3;
     let image_buffer: Arc<Mutex<Vec<u8>>> = Arc::new(Mutex::new(vec![0; size as usize]));
 
-    let world_arc: Arc<HittableList> = Arc::new(world);
+
 
     let line_step: i32 = image_width / max_threads as i32;
 
@@ -141,7 +123,7 @@ fn main() -> Result<(), std::io::Error> {
         for i in 0..line_step {
             pool.execute( {
                 let clone: Arc<Mutex<Vec<u8>>> = Arc::clone(&image_buffer);
-                let world_clone: Arc<HittableList> = world_arc.clone();
+                let world_clone: Arc<World> = world_arc.clone();
                 move || {
                     let scanline_start: i32 = (i * line_step).min(image_width);
                     let scanline_end: i32 = (scanline_start + line_step).min(image_width);
@@ -153,7 +135,7 @@ fn main() -> Result<(), std::io::Error> {
                             let u: f64 = (x as f64 + a) / ((image_width-1) as f64);
                             let v: f64 = (y as f64 + b) / ((image_height-1) as f64);
                             let r: Ray = cam.get_ray(u, v);
-                            pixel_color += ray_color(&r, &world_clone, max_depth);
+                            pixel_color += world_clone.ray_color(&r, max_depth);
                         }
                         let pos: i32 = (x + y * image_width) * 3;
                         let mut v: std::sync::MutexGuard<'_, Vec<u8>> = clone.lock().unwrap();
