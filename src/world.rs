@@ -2,6 +2,7 @@ use rand::Rng;
 
 use crate::hittable::*;
 use crate::hittable_list::HittableList;
+use crate::interval::*;
 use crate::ray::*;
 use crate::material::*;
 use crate::sphere::*;
@@ -24,7 +25,7 @@ impl World {
     
         let mut rec: HitRecord = HitRecord{..HitRecord::default()};
     
-        if self.hit(r, 0.001, f64::INFINITY, &mut rec) {
+        if self.hit(r, Interval { min: 0.001, max: f64::INFINITY }, &mut rec) {
             let mut scattered: Ray = Ray{..Ray::default()};
             let mut attenuation: Color = Color::zero();
             let mat_idx: usize = rec.mat_idx;
@@ -38,12 +39,12 @@ impl World {
         Color::one()*(1.0-t) + Color::new(0.5, 0.7, 1.0)*t
     }
 
-    fn hit(&self, r:&Ray, t_min:f64, t_max:f64, rec: &mut HitRecord) -> bool {
-        let mut closest_so_far = t_max;
+    fn hit(&self, r:&Ray, ray_t: Interval, rec: &mut HitRecord) -> bool {
+        let mut closest_so_far = ray_t.max;
         let mut hit_anything = false;
         
         for object in self.objects.iter() {
-            if object.hit(r, t_min, closest_so_far, rec) {
+            if object.hit(r, Interval { min: ray_t.min, max: closest_so_far }, rec) {
                 hit_anything = true;
                 closest_so_far = rec.t;
             }
@@ -58,6 +59,10 @@ impl World {
     }
 
     pub fn add_objects(self: &mut World, objs: &HittableList) {
+        todo!();
+    }
+
+    pub fn build_bvh_tree(self: &mut World) {
         todo!();
     }
 

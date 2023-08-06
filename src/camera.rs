@@ -58,4 +58,6 @@ impl Camera {
             rand::thread_rng().gen_range(0.0..=self.delta_time)
         )
     }
+
+    
 }

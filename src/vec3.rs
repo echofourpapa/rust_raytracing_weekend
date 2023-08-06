@@ -99,6 +99,7 @@ impl ops::Index<usize> for Vec3 {
 }
 
 impl ops::IndexMut<usize> for Vec3 {
+
     fn index_mut(&mut self, index: usize) -> &mut Self::Output {
         &mut self.e[index]
     }
@@ -227,11 +228,11 @@ pub fn reflect(v: &Vec3, n: &Vec3) -> Vec3 {
 }
 
 pub fn refract(v: &Vec3, n: &Vec3, ior:f64) -> Vec3 {
-    let cos_theta: f64 = dot(&-*v, n).min(1.0);
-    let r_out_perp: Vec3 = (*v + cos_theta * *n ) * ior;
-    let g: f64 = 1.0- r_out_perp.length_squared();
-    let h: f64 = g.abs().sqrt();
-    let r_out_parallel: Vec3 = -h * *n;
+    let uv: Vec3 = *v;
+    let un: Vec3 = *n;
+    let cos_theta: f64 = dot(&-uv, &un).min(1.0);
+    let r_out_perp: Vec3 = (uv + cos_theta * un ) * ior;
+    let r_out_parallel: Vec3 = -(1.0- r_out_perp.length_squared()).abs().sqrt() * un;
 
     return r_out_perp + r_out_parallel;
 }

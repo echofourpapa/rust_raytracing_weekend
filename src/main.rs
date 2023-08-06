@@ -1,5 +1,4 @@
 use std::{io::{stdout, Write}, sync::{Arc, Mutex}, time::{Instant, Duration}, fs};
-use hittable::{HitRecord, Hittable};
 use rand::Rng;
 use std::thread;
 use threadpool::ThreadPool;
@@ -7,11 +6,10 @@ use clap::Parser;
 
 use ray::*;
 use vec3::*;
-use hittable_list::*;
 use camera::*;
 use common::*;
 use world::*;
-use bvh::*;
+use interval::*;
 
 mod tga;
 mod vec3;
@@ -25,6 +23,7 @@ mod common;
 mod aabb;
 mod world;
 mod bvh;
+mod interval;
 
 
 fn write_color(buffer: &mut Vec<u8>, color:&Color, spp: u32, pos:usize) {
@@ -43,13 +42,13 @@ struct Args{
     #[arg(long, long_help="Output image path.  Only TGA output is supported.", default_value="output/image.tga")]
     output: std::path::PathBuf,
 
-    #[arg(long, long_help="Output image width.", default_value_t=1920)]
+    #[arg(long, long_help="Output image width.", default_value_t=1280)]
     width: i32,
 
-    #[arg(long, long_help="Output image height.", default_value_t=1080)]
+    #[arg(long, long_help="Output image height.", default_value_t=720)]
     height: i32,
 
-    #[arg(long, long_help="Samples per pixel.", default_value_t=256)]
+    #[arg(long, long_help="Samples per pixel.", default_value_t=50)]
     spp: u32,
 
     #[arg(long, long_help="Max ray bounce depth.", default_value_t=50)]
@@ -72,7 +71,7 @@ fn validate_path(path: &std::path::PathBuf) -> bool {
 
 fn main() -> Result<(), std::io::Error> {
 
-    let args = Args::parse();
+    let args: Args = Args::parse();
 
     if !validate_path(&args.output) {
         return Ok(());
@@ -105,13 +104,11 @@ fn main() -> Result<(), std::io::Error> {
     );
 
     let max_threads: usize = thread::available_parallelism().unwrap().get() - 1;
-    let pool = ThreadPool::new(max_threads);
+    let pool: ThreadPool = ThreadPool::new(max_threads);
 
     println!("Image size: {}x{}", image_width, image_height);
     let size: i32 = image_width * image_width * 3;
     let image_buffer: Arc<Mutex<Vec<u8>>> = Arc::new(Mutex::new(vec![0; size as usize]));
-
-
 
     let line_step: i32 = image_width / max_threads as i32;
 

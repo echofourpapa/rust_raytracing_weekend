@@ -1,3 +1,4 @@
+use crate::interval::*;
 use crate::vec3::*;
 use crate::ray::*;
 use crate::hittable::*;
@@ -11,7 +12,7 @@ pub struct Sphere {
 }
 
 impl Hittable for Sphere {
-    fn hit(&self, r:&Ray, t_min:f64, t_max:f64, rec: &mut HitRecord) -> bool {
+    fn hit(&self, r:&Ray, ray_t: Interval, rec: &mut HitRecord) -> bool {
 
         let oc = r.origin - self.center;
         let a = r.direction.length_squared();
@@ -26,9 +27,9 @@ impl Hittable for Sphere {
 
         // Find the nearest root that lies in the acceptable range.
         let mut root = (-half_b - sqrtd) / a;
-        if root < t_min || t_max < root {
+        if !ray_t.surrounds(root) {
             root = (-half_b -sqrtd ) / a;
-            if root < t_min || t_max < root {
+            if !ray_t.surrounds(root) {
                 return false;
             }
         }
@@ -70,7 +71,7 @@ impl MovingSphere {
 }
 
 impl Hittable for MovingSphere {
-    fn hit(&self, r:&Ray, t_min:f64, t_max:f64, rec: &mut HitRecord) -> bool {
+    fn hit(&self, r:&Ray, ray_t: Interval, rec: &mut HitRecord) -> bool {
 
         let oc = r.origin - self.center(r.time);
         let a = r.direction.length_squared();
@@ -85,9 +86,9 @@ impl Hittable for MovingSphere {
 
         // Find the nearest root that lies in the acceptable range.
         let mut root = (-half_b - sqrtd) / a;
-        if root < t_min || t_max < root {
+        if !ray_t.surrounds(root) {
             root = (-half_b -sqrtd ) / a;
-            if root < t_min || t_max < root {
+            if !ray_t.surrounds(root) {
                 return false;
             }
         }

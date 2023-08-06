@@ -1,10 +1,7 @@
-use rand::Rng;
-
 use crate::hittable::*;
+use crate::interval::*;
 use crate::ray::*;
 use crate::material::*;
-use crate::sphere::*;
-use crate::vec3::*;
 use crate::aabb::*;
 
 #[derive(Default, Clone)]
@@ -22,12 +19,12 @@ impl HittableList {
 }
 
 impl Hittable for HittableList {
-    fn hit(&self, r:&Ray, t_min:f64, t_max:f64, rec: &mut HitRecord) -> bool {
-        let mut closest_so_far = t_max;
+    fn hit(&self, r:&Ray, ray_t: Interval, rec: &mut HitRecord) -> bool {
+        let mut closest_so_far = ray_t.max;
         let mut hit_anything = false;
         
         for object in self.objects.iter() {
-            if object.hit(r, t_min, closest_so_far, rec) {
+            if object.hit(r, Interval{min:ray_t.min, max:closest_so_far}, rec) {
                 hit_anything = true;
                 closest_so_far = rec.t;
             }

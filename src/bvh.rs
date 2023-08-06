@@ -1,5 +1,6 @@
 use crate::hittable::*;
 use crate::aabb::*;
+use crate::interval::*;
 
 #[derive(Copy, Clone, Default)]
 pub struct BVHNode {
@@ -17,7 +18,7 @@ pub struct BVHNode {
 // }
 
 impl Hittable for BVHNode {
-    fn hit(&self, r:&crate::ray::Ray, t_min:f64, t_max:f64, rec: &mut HitRecord) -> bool {
+    fn hit(&self, r:&crate::ray::Ray, ray_t: Interval, rec: &mut HitRecord) -> bool {
         todo!()
     }
 

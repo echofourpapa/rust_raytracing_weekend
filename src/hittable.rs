@@ -1,3 +1,4 @@
+use crate::interval::*;
 use crate::vec3::*;
 use crate::ray::*;
 use crate::aabb::*;
@@ -20,7 +21,7 @@ impl HitRecord {
 }
 
 pub trait Hittable : Send {
-    fn hit(&self, r:&Ray, t_min:f64, t_max:f64, rec: &mut HitRecord) -> bool;
+    fn hit(&self, r:&Ray, ray_t: Interval, rec: &mut HitRecord) -> bool;
     fn bounding_box(&self, delta: f64, out_box: &mut AABB) -> bool;
     fn clone_dyn(&self) -> Box<dyn Hittable + Sync>;
 }
