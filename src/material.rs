@@ -41,7 +41,7 @@ impl Metal {
 
 impl Material for Lambertian {
     fn scatter(&self, ray_in: &Ray, rec: &HitRecord, color: &mut Color, scattered: &mut Ray) -> bool {
-        let mut scatter_direction = randon_in_hemisphere(&rec.normal);
+        let mut scatter_direction: Vec3 = random_unit_vector() + rec.normal;
 
         if scatter_direction.near_zero() {
             scatter_direction = rec.normal;
@@ -63,7 +63,7 @@ impl Material for Metal {
         let dir = normalize(ray_in.direction);
         let reflected = reflect(&dir, &rec.normal);       
 
-        *scattered = Ray::new(rec.p, reflected + self.roughness * randon_in_hemisphere(&rec.normal), ray_in.time);
+        *scattered = Ray::new(rec.p, reflected + self.roughness * random_unit_vector(), ray_in.time);
         *color = self.albedo;
 
         return dot(&scattered.direction, &rec.normal) > 0.0;

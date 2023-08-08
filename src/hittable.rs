@@ -22,7 +22,7 @@ impl HitRecord {
 
 pub trait Hittable : Send {
     fn hit(&self, r:&Ray, ray_t: Interval, rec: &mut HitRecord) -> bool;
-    fn bounding_box(&self, delta: f64, out_box: &mut AABB) -> bool;
+    fn bounding_box(&self) -> AABB;
     fn clone_dyn(&self) -> Box<dyn Hittable + Sync>;
 }
 

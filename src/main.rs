@@ -9,7 +9,6 @@ use vec3::*;
 use camera::*;
 use common::*;
 use world::*;
-use interval::*;
 
 mod tga;
 mod vec3;
@@ -25,11 +24,10 @@ mod world;
 mod bvh;
 mod interval;
 
-
 fn write_color(buffer: &mut Vec<u8>, color:&Color, spp: u32, pos:usize) {
 
     let scale: f64 = 1.0 / (spp as f64);
-    let scaled_color: Vec3 = (*color as Vec3 * scale).sqrt();
+    let scaled_color: Color = (*color * scale).to_srgb();
 
     buffer[pos]   =  (255.0 * saturate(scaled_color.b())) as u8;
     buffer[pos+1] =  (255.0 * saturate(scaled_color.g())) as u8;
@@ -42,17 +40,20 @@ struct Args{
     #[arg(long, long_help="Output image path.  Only TGA output is supported.", default_value="output/image.tga")]
     output: std::path::PathBuf,
 
-    #[arg(long, long_help="Output image width.", default_value_t=1280)]
+    #[arg(long, long_help="Output image width.", default_value_t=1920)]
     width: i32,
 
-    #[arg(long, long_help="Output image height.", default_value_t=720)]
+    #[arg(long, long_help="Output image height.", default_value_t=1080)]
     height: i32,
 
-    #[arg(long, long_help="Samples per pixel.", default_value_t=50)]
+    #[arg(long, long_help="Samples per pixel.", default_value_t=256)]
     spp: u32,
 
     #[arg(long, long_help="Max ray bounce depth.", default_value_t=50)]
-    max_depth: i32
+    max_depth: i32,
+
+    #[arg(long, long_help="Max number of threads.", default_value_t=thread::available_parallelism().unwrap().get())]
+    threads: usize
 }
 
 fn validate_path(path: &std::path::PathBuf) -> bool {
@@ -103,10 +104,10 @@ fn main() -> Result<(), std::io::Error> {
         1.0
     );
 
-    let max_threads: usize = thread::available_parallelism().unwrap().get() - 1;
+    let max_threads: usize = args.threads;
     let pool: ThreadPool = ThreadPool::new(max_threads);
 
-    println!("Image size: {}x{}", image_width, image_height);
+    println!("Image size: {}x{}, Samples: {}", image_width, image_height, samples_per_pixel);
     let size: i32 = image_width * image_width * 3;
     let image_buffer: Arc<Mutex<Vec<u8>>> = Arc::new(Mutex::new(vec![0; size as usize]));
 
@@ -117,12 +118,12 @@ fn main() -> Result<(), std::io::Error> {
     let _st: f64 = start.elapsed().as_secs_f64();
 
     for y in 0..image_height {
-        for i in 0..line_step {
+        for i in 0..max_threads {
             pool.execute( {
                 let clone: Arc<Mutex<Vec<u8>>> = Arc::clone(&image_buffer);
                 let world_clone: Arc<World> = world_arc.clone();
                 move || {
-                    let scanline_start: i32 = (i * line_step).min(image_width);
+                    let scanline_start: i32 = (i as i32 * line_step).min(image_width);
                     let scanline_end: i32 = (scanline_start + line_step).min(image_width);
                     for x in scanline_start..scanline_end {
                         let mut pixel_color: Vec3 = Color::zero();
@@ -143,7 +144,7 @@ fn main() -> Result<(), std::io::Error> {
         }
     }
 
-    let total_possible_threads = image_height * line_step;
+    let total_possible_threads = image_height * max_threads as i32;
 
     while pool.queued_count() > 0 && pool.active_count() > 0 {
         thread::sleep(Duration::from_millis(100));

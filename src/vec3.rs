@@ -283,20 +283,32 @@ pub fn random_in_unit_disk() -> Vec3 {
 pub type Point3 = Vec3;
 pub type Color = Vec3;
 
+pub fn linear_to_srgb_f64(c: f64) -> f64 {
+    if c <= 0.0031308 { 12.92 * c} else { 1.055 * c.powf(1.0/2.4) - 0.055}
+}
+
 impl Color {
     pub fn white() -> Color {
-        Vec3::one()
+        Color::one()
     }
 
-    pub fn r(self: &Vec3) -> f64 {
+    pub fn r(self: &Color) -> f64 {
         self.x()
     }
 
-    pub fn g(self: &Vec3) -> f64 {
+    pub fn g(self: &Color) -> f64 {
         self.y()
     }
 
-    pub fn b(self: &Vec3) -> f64 {
+    pub fn b(self: &Color) -> f64 {
         self.z()
+    }
+
+    pub fn to_srgb(self: &Color) -> Color {
+        Color::new(
+            linear_to_srgb_f64(self.r()),
+            linear_to_srgb_f64(self.g()),
+            linear_to_srgb_f64(self.b())
+        )
     }
 }

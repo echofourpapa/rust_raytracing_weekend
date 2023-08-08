@@ -1,23 +1,47 @@
+use std::ops;
+
+use crate::interval::*;
 use crate::vec3::*;
 use crate::ray::*;
 
 #[derive(Copy, Clone, Default)]
 pub struct AABB {
-    pub min: Point3,
-    pub max: Point3,
+    x: Interval,
+    y: Interval,
+    z: Interval
 }
 
 impl AABB {
-    pub fn hit(&self, r:&Ray, t_min:f64, t_max:f64) -> bool {
+
+    pub fn new(a: &Point3, b: &Point3) -> AABB {
+        AABB {
+            x: Interval { min: a.x().min(b.x()), max: a.x().max(b.x()) },
+            y: Interval { min: a.y().min(b.y()), max: a.y().max(b.y()) },
+            z: Interval { min: a.z().min(b.z()), max: a.z().max(b.z()) }
+        }
+    }
+
+    pub fn axis(&self, n:usize)-> &Interval {
+        assert!(n <=2);
+        match n {
+            1=> &self.y,
+            2=> &self.z,
+            _=> &self.x
+        }
+    }
+
+    pub fn hit(&self, r:&Ray, ray_t: Interval) -> bool {
         for a in 0..3 {
-            let inv_d = 1.0 / r.direction[a];
-            let mut t0 = (self.min[a] - r.origin[a]) * inv_d;
-            let mut t1 = (self.max[a] - r.origin[a]) * inv_d;
+            let inv_d: f64 = 1.0 / r.direction[a];
+            let orig: f64 = r.origin[a];
+            let axis: &Interval = self.axis(a);
+            let mut t0: f64 = (axis.min - orig) * inv_d;
+            let mut t1: f64 = (axis.max - orig) * inv_d;
             if inv_d < 0.0 {
                 std::mem::swap(&mut t0, &mut t1);
             }
-            let t_min_t = if t0 > t_min {t0} else {t_min};
-            let t_max_t = if t1 < t_max {t1} else {t_max};
+            let t_min_t: f64 = if t0 > ray_t.min {t0} else {ray_t.min};
+            let t_max_t: f64 = if t1 < ray_t.max {t1} else {ray_t.max};
             if t_max_t <= t_min_t {
                 return false;
             }
@@ -26,21 +50,23 @@ impl AABB {
     }
 }
 
-pub fn surrounding_box(box0: &AABB, box1: &AABB) -> AABB {
-    let min = Vec3::new(
-        box0.min.x().min(box1.min.x()),
-        box0.min.y().min(box1.min.y()),
-        box0.min.z().min(box1.min.z())
-    );
+impl ops::Add<AABB> for AABB {
+    type Output = AABB;
+    fn add(self, other: AABB) -> AABB {
+        AABB {
+            x: self.x + other.x,
+            y: self.y + other.y,
+            z: self.z + other.z
+        }
+    }
+}
 
-    let max = Vec3::new(
-        box0.max.x().min(box1.max.x()),
-        box0.max.y().min(box1.max.y()),
-        box0.max.z().min(box1.max.z())
-    );
-
-    AABB {
-        min:min,
-        max:max
+impl ops::AddAssign<AABB> for AABB {
+    fn add_assign(&mut self, other: AABB) {
+        *self = AABB {
+            x: self.x + other.x,
+            y: self.y + other.y,
+            z: self.z + other.z
+        };
     }
 }
