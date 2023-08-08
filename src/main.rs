@@ -53,7 +53,10 @@ struct Args{
     max_depth: i32,
 
     #[arg(long, long_help="Max number of threads.", default_value_t=thread::available_parallelism().unwrap().get())]
-    threads: usize
+    threads: usize,
+
+    #[arg(long, long_help="Output progress", default_value_t=false)]
+    silent: bool
 }
 
 fn validate_path(path: &std::path::PathBuf) -> bool {
@@ -106,8 +109,10 @@ fn main() -> Result<(), std::io::Error> {
 
     let max_threads: usize = args.threads;
     let pool: ThreadPool = ThreadPool::new(max_threads);
+    let total_possible_threads: i32 = image_height * max_threads as i32;
 
     println!("Image size: {}x{}, Samples: {}", image_width, image_height, samples_per_pixel);
+    println!("{} threads per scanline, total thread count: {}", max_threads, total_possible_threads);
     let size: i32 = image_width * image_width * 3;
     let image_buffer: Arc<Mutex<Vec<u8>>> = Arc::new(Mutex::new(vec![0; size as usize]));
 
@@ -142,39 +147,39 @@ fn main() -> Result<(), std::io::Error> {
             });   
         }
     }
-
-    let total_possible_threads = image_height * max_threads as i32;
-
-    while pool.queued_count() > 0 && pool.active_count() > 0 {
-        thread::sleep(Duration::from_millis(100));
-        let total:usize = pool.active_count() + pool.queued_count();
-        let finished: i32 = total_possible_threads - total as i32;
-        let prog: f64 = finished as f64 / total_possible_threads as f64;
-        let t: f64 = start.elapsed().as_secs_f64();
-        let estimate: f64 = if finished > 0 {(t/finished as f64) * total_possible_threads as f64} else {0.0};
-        print!("\r{} Active, {} Queued, {} total, {:.2}% Complete, Running time: {}, Time Remaining {}",
-            pool.active_count(), 
-            pool.queued_count(),
-            total_possible_threads,
-            prog * 100.0,
-            seconds_to_hhmmss(t),
-            seconds_to_hhmmss(estimate - t)
-        );
-        stdout().flush().unwrap();
-
+    if !args.silent {
+        let mut active: usize = pool.active_count();
+        let mut queued: usize = pool.queued_count();
+        let mut total:usize = active + queued;
+        while total > 0 {
+            let finished: i32 = total_possible_threads - total as i32;
+            let prog: f64 = finished as f64 / total_possible_threads as f64;
+            let t: f64 = start.elapsed().as_secs_f64();
+            let estimate: f64 = if finished > 0 {(t/finished as f64) * total_possible_threads as f64} else {0.0};
+            print!("\r{} Active, {} Remaining, {:.2}% Complete, Running time: {}, Time Remaining {}",
+                active, 
+                queued,
+                prog * 100.0,
+                seconds_to_hhmmss(t),
+                seconds_to_hhmmss(estimate - t)
+            );
+            stdout().flush().unwrap();
+            active = pool.active_count();
+            queued = pool.queued_count();
+            total = active + queued;
+        }
     }
     
     pool.join();
+    println!("Total render time: {}", seconds_to_hhmmss(start.elapsed().as_secs_f64()));
 
-    print!("\n");
     println!("Saving to: {}", args.output.display());
-
     let dir: std::path::PathBuf = args.output.with_file_name("");
     if !(dir.exists() || dir.as_os_str().is_empty()) {
         fs::create_dir_all(dir)?
     }
-
     tga::write_tga_file(image_width, image_height, &*image_buffer.lock().unwrap(), &args.output)?;
-    println!("Done! Completed in {}", seconds_to_hhmmss(start.elapsed().as_secs_f64()));
+
+    println!("Total time {}", seconds_to_hhmmss(start.elapsed().as_secs_f64()));
     Ok(())
 }
