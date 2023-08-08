@@ -115,7 +115,6 @@ fn main() -> Result<(), std::io::Error> {
 
     // Start timer
     let start: Instant = Instant::now();
-    let _st: f64 = start.elapsed().as_secs_f64();
 
     for y in 0..image_height {
         for i in 0..max_threads {
