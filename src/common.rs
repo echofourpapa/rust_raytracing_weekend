@@ -36,3 +36,17 @@ pub fn seconds_to_hhmmss(s:f64) -> String {
 
     return s_string;
 }
+
+pub fn validate_path(path: &std::path::PathBuf) -> bool {
+    if path.extension().is_none() {
+        let suggestion = path.with_extension("tga");
+        println!("{} is missing an extension. Did you mean {}?", path.display(), suggestion.display());
+        return false;
+    } else {
+        if path.extension().unwrap().to_ascii_lowercase() != "tga" {
+            println!("Only TGA format is supported.");
+            return false;
+        }
+    }
+    path.has_root() || path.is_relative()
+}

@@ -14,6 +14,18 @@ impl Interval {
     pub fn surrounds(&self, x:f64) -> bool {
         self.min < x && x < self.max
     }
+
+    pub fn size(&self) -> f64 {
+        self.max-self.min
+    }
+
+    pub fn expand(&self, delta: f64) -> Interval {
+        let padding: f64 =  delta/2.0;
+        Interval {
+            min: self.min - padding,
+            max: self.max + padding
+        }
+    }
 }
 
 impl ops::Add<Interval> for Interval {

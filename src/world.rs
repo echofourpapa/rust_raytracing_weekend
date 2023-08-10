@@ -4,6 +4,7 @@ use rand::Rng;
 
 use crate::hittable::*;
 use crate::interval::*;
+use crate::quad::*;
 use crate::ray::*;
 use crate::material::*;
 use crate::sphere::*;
@@ -140,6 +141,47 @@ fn box_y_compare(a: &AABB, b: &AABB) -> Ordering {
 
 fn box_z_compare(a: &AABB, b: &AABB) -> Ordering {
     box_compare(a, b, 2)
+}
+
+pub fn cornell_box() -> World {
+    let mut world: World = World{..World::default()};
+    let red: usize = world.create_material(Box::new(Lambertian{albedo: Color::new(0.65, 0.05,0.05)}));
+    let white: usize = world.create_material(Box::new(Lambertian{albedo: Color::new(0.73, 0.73,0.73)}));
+    let green: usize = world.create_material(Box::new(Lambertian{albedo: Color::new(0.12, 0.45,0.15)}));
+
+    world.objects.push(Box::new(Quad::new(
+        Point3::new(555.0, 0.0, 0.0),
+        Point3::new(0.0, 555.0, 0.0),
+        Point3::new(0.0, 0.0, 555.0), 
+        green
+    )));
+    world.objects.push(Box::new(Quad::new(
+        Point3::new(0.0, 0.0, 0.0),
+        Point3::new(0.0, 555.0, 0.0),
+        Point3::new(0.0, 0.0, 555.0), 
+        red
+    )));
+    world.objects.push(Box::new(Quad::new(
+        Point3::new(0.0, 0.0, 0.0),
+        Point3::new(555.0, 0.0, 0.0),
+        Point3::new(0.0, 0.0, 555.0), 
+        white
+    )));
+    world.objects.push(Box::new(Quad::new(
+        Point3::new(555.0, 555.0, 555.0),
+        Point3::new(-555.0, 0.0, 0.0),
+        Point3::new(0.0, 0.0, -555.0), 
+        white
+    )));
+    world.objects.push(Box::new(Quad::new(
+        Point3::new(0.0, 0.0, 555.0),
+        Point3::new(555.0, 0.0, 0.0),
+        Point3::new(0.0, 555.0, 0.0), 
+        white
+    )));
+
+    world.build_bvh_tree();
+    world
 }
 
 pub fn random_world() -> World {

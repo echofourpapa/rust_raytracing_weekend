@@ -48,6 +48,15 @@ impl AABB {
         }
         return true;
     }
+
+    pub fn pad(&self) -> AABB {
+        let delta: f64 = 0.0001;
+        AABB {
+            x: if self.x.size() >= delta {self.x} else {self.x.expand(delta)},
+            y: if self.y.size() >= delta {self.y} else {self.y.expand(delta)},
+            z: if self.z.size() >= delta {self.z} else {self.z.expand(delta)}
+        }
+    }
 }
 
 impl ops::Add<AABB> for AABB {
