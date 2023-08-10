@@ -143,9 +143,30 @@ fn box_z_compare(a: &AABB, b: &AABB) -> Ordering {
     box_compare(a, b, 2)
 }
 
+pub fn quads() -> World {
+    let mut world: World = World{..World::default()};
+
+    let left_red     : usize = world.create_material(Box::new(Lambertian{albedo: Color::new(1.0, 0.2, 0.2)}));
+    let back_green   : usize = world.create_material(Box::new(Lambertian{albedo: Color::new(0.2, 1.0, 0.2)}));
+    let right_blue   : usize = world.create_material(Box::new(Lambertian{albedo: Color::new(0.2, 0.2, 1.0)}));
+    let upper_orange : usize = world.create_material(Box::new(Lambertian{albedo: Color::new(1.2, 0.5, 0.5)}));
+    let lower_teal   : usize = world.create_material(Box::new(Lambertian{albedo: Color::new(0.2, 0.8, 0.8)}));
+
+    world.objects.push(Box::new(Quad::new(Point3::new(-3.0, -2.0, 5.0), Point3::new(0.0, 0.0,-4.0), Point3::new(0.0, 4.0, 0.0), left_red)));
+    world.objects.push(Box::new(Quad::new(Point3::new(-2.0, -2.0, 0.0), Point3::new(4.0, 0.0, 0.0), Point3::new(0.0, 4.0, 0.0), back_green)));
+    world.objects.push(Box::new(Quad::new(Point3::new(3.0, -2.0, 1.0), Point3::new(0.0, 0.0, 4.0), Point3::new(0.0, 4.0, 0.0), right_blue)));
+    world.objects.push(Box::new(Quad::new(Point3::new(-2.0, 3.0, 1.0), Point3::new(4.0, 0.0, 0.0), Point3::new(0.0, 0.0, 4.0), upper_orange)));
+    world.objects.push(Box::new(Quad::new(Point3::new(-2.0, -3.0, 5.0), Point3::new(4.0, 0.0,0.0), Point3::new(0.0, 0.0,-4.0), lower_teal)));
+
+
+
+    world.build_bvh_tree();
+    world
+}
+
 pub fn cornell_box() -> World {
     let mut world: World = World{..World::default()};
-    let red: usize = world.create_material(Box::new(Lambertian{albedo: Color::new(0.65, 0.05,0.05)}));
+    let red  : usize = world.create_material(Box::new(Lambertian{albedo: Color::new(0.65, 0.05,0.05)}));
     let white: usize = world.create_material(Box::new(Lambertian{albedo: Color::new(0.73, 0.73,0.73)}));
     let green: usize = world.create_material(Box::new(Lambertian{albedo: Color::new(0.12, 0.45,0.15)}));
 

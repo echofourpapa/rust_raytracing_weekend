@@ -6,37 +6,38 @@ use crate::aabb::*;
 
 #[derive(Copy, Clone)]
 pub struct Quad {
-    pub q: Point3,
+    pub Q: Point3,
     pub u: Vec3,
     pub v: Vec3,
     pub mat_idx: usize,
     pub bbox: AABB,
     pub normal: Vec3,
-    pub d: f64,
+    pub D: f64,
     pub w: Vec3
 }
 
 impl Quad {
-    pub fn new(q:Point3, u:Vec3, v:Vec3, mat_idx:usize) -> Quad {
-        let mut n = cross(&u,&v);
-        n.normalize();
+    pub fn new(Q:Point3, u:Vec3, v:Vec3, mat_idx:usize) -> Quad {
+        let normal: Vec3 = normalize(cross(&u,&v));
         Quad {
-            q:q,
+            Q:Q,
             u:u,
             v:v,
             mat_idx:mat_idx,
-            bbox: AABB::new(&q, &(q+ u + v)).pad(),
-            normal: n,
-            d: dot(&n, &q),
-            w: n / dot(&n, &n)
+            bbox: AABB::new(&Q, &(Q+ u + v)).pad(),
+            normal: normal,
+            D: dot(&normal, &Q),
+            w: normal / dot(&normal, &normal)
         }
     }
 }
 
-pub fn is_interior(a: f64, b : f64) -> bool {
-    if (a < 0.0 || 1.0 < a) || (b < 0.0 || 1.0 < b) {
+pub fn is_interior(a: f64, b: f64, rec: &mut HitRecord) -> bool {
+    if (a < 0.0) || (1.0 < a) || (b < 0.0) || (1.0 < b) {
         return false;
     }
+    rec.u = a;
+    rec.v = b;
     return true;
 }
 
@@ -47,7 +48,7 @@ impl Hittable for Quad {
             return false;
         }
 
-        let t: f64 = (self.d - dot(&self.normal, &r.origin)) / denom;
+        let t: f64 = (self.D - dot(&self.normal, &r.origin)) / denom;
 
         if !ray_t.contains(t) {
             return false;
@@ -55,11 +56,11 @@ impl Hittable for Quad {
 
         let intersection: Vec3 = r.at(t);
 
-        let planar_hitpt_vector = intersection - self.q;
+        let planar_hitpt_vector: Vec3 = intersection - self.Q;
         let alpha: f64 = dot(&self.w, &cross(&planar_hitpt_vector, &self.v));
         let beta: f64 = dot(&self.w, &cross(&self.u, &planar_hitpt_vector));
 
-        if !is_interior(alpha, beta) {
+        if !is_interior(alpha, beta, rec) {
             return false;
         }
 
