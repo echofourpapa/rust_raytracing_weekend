@@ -45,4 +45,12 @@ impl Hittable for HittableList {
     fn clone_dyn(&self) -> Box<dyn Hittable + Sync> {
         Box::new(self.clone())
     }
+
+    fn get_mat(&self) -> usize {
+        todo!()
+    }
+
+    fn set_mat(&mut self, mat_idx: usize) {
+        todo!()
+    }
 }

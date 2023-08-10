@@ -26,6 +26,8 @@ pub trait Hittable : Send {
     fn hit(&self, r:&Ray, ray_t: Interval, rec: &mut HitRecord) -> bool;
     fn bounding_box(&self) -> AABB;
     fn clone_dyn(&self) -> Box<dyn Hittable + Sync>;
+    fn get_mat(&self) -> usize;
+    fn set_mat(&mut self, mat_idx: usize);
 }
 
 impl Clone for Box<dyn Hittable + Sync> {

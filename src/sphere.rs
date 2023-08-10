@@ -92,4 +92,12 @@ impl Hittable for Sphere {
     fn bounding_box(&self) -> AABB {
         self.bbox
     }
+
+    fn get_mat(&self) -> usize {
+        self.mat_idx
+    }
+
+    fn set_mat(&mut self, mat_idx: usize) {
+        self.mat_idx = mat_idx;
+    }
 }

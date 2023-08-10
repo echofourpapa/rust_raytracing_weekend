@@ -3,6 +3,7 @@ use std::cmp::Ordering;
 use rand::Rng;
 
 use crate::hittable::*;
+use crate::hittable_list::HittableList;
 use crate::interval::*;
 use crate::quad::*;
 use crate::ray::*;
@@ -32,6 +33,10 @@ impl World {
             let mut attenuation: Color = Color::zero();
             let mat_idx: usize = rec.mat_idx;
             if self.materials[mat_idx].scatter(r, &rec, &mut attenuation, &mut scattered) {
+                // Uncomment to debug UVs
+                // attenuation.set_x(rec.u);
+                // attenuation.set_y(rec.v);
+                // attenuation.set_z(0.0);
                 return attenuation * self.ray_color(&scattered, depth-1); 
             }
             return Color::zero();
@@ -74,6 +79,16 @@ impl World {
 
     pub fn build_bvh_tree(self: &mut World) {
         self.fill_bvh_nodes(0, self.objects.len());
+    }
+
+    pub fn add_list(self: &mut World, hit_list: &mut HittableList) {
+        let last_mat = self.materials.len();
+        self.materials.append(&mut hit_list.materials);
+        for obj in hit_list.objects.iter_mut() {
+            let new_idx: usize = obj.get_mat()+last_mat;
+            obj.set_mat(new_idx); 
+        }
+        self.objects.append(&mut hit_list.objects);
     }
 
     pub fn fill_bvh_nodes(self: &mut World, start:usize, end:usize) -> usize {
@@ -158,14 +173,13 @@ pub fn quads() -> World {
     world.objects.push(Box::new(Quad::new(Point3::new(-2.0, 3.0, 1.0), Point3::new(4.0, 0.0, 0.0), Point3::new(0.0, 0.0, 4.0), upper_orange)));
     world.objects.push(Box::new(Quad::new(Point3::new(-2.0, -3.0, 5.0), Point3::new(4.0, 0.0,0.0), Point3::new(0.0, 0.0,-4.0), lower_teal)));
 
-
-
     world.build_bvh_tree();
     world
 }
 
 pub fn cornell_box() -> World {
     let mut world: World = World{..World::default()};
+
     let red  : usize = world.create_material(Box::new(Lambertian{albedo: Color::new(0.65, 0.05,0.05)}));
     let white: usize = world.create_material(Box::new(Lambertian{albedo: Color::new(0.73, 0.73,0.73)}));
     let green: usize = world.create_material(Box::new(Lambertian{albedo: Color::new(0.12, 0.45,0.15)}));
@@ -200,6 +214,9 @@ pub fn cornell_box() -> World {
         Point3::new(0.0, 555.0, 0.0), 
         white
     )));
+
+    world.add_list(&mut make_box(&Point3::new(130.0, 0.0, 65.0), &Point3::new(295.0, 165.0, 230.0), Box::new(Lambertian{albedo: Color::new(0.73, 0.73,0.73)})));
+    world.add_list(&mut make_box(&Point3::new(265.0, 0.0, 295.0), &Point3::new(430.0, 330.0, 460.0), Box::new(Lambertian{albedo: Color::new(0.73, 0.73,0.73)})));
 
     world.build_bvh_tree();
     world

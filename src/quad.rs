@@ -1,4 +1,6 @@
+use crate::hittable_list::HittableList;
 use crate::interval::*;
+use crate::material::Material;
 use crate::vec3::*;
 use crate::ray::*;
 use crate::hittable::*;
@@ -18,7 +20,8 @@ pub struct Quad {
 
 impl Quad {
     pub fn new(Q:Point3, u:Vec3, v:Vec3, mat_idx:usize) -> Quad {
-        let normal: Vec3 = normalize(cross(&u,&v));
+        let n: Vec3 = cross(&u,&v);
+        let normal = normalize(n);
         Quad {
             Q:Q,
             u:u,
@@ -27,9 +30,30 @@ impl Quad {
             bbox: AABB::new(&Q, &(Q+ u + v)).pad(),
             normal: normal,
             D: dot(&normal, &Q),
-            w: normal / dot(&normal, &normal)
+            w: n / dot(&n, &n)
         }
     }
+}
+
+pub fn make_box(a: &Point3, b:&Point3, mat: Box<dyn Material + Sync>) -> HittableList {
+    let mut sides: HittableList = HittableList{..Default::default()};
+    let mat_idx = sides.create_material(mat);
+
+    let min: Vec3 = Point3::new(a.x().min(b.x()), a.y().min(b.y()), a.z().min(b.z()));
+    let max: Vec3 = Point3::new(a.x().max(b.x()), a.y().max(b.y()), a.z().max(b.z()));
+
+    let dx: Vec3 = Vec3::new(max.x() - min.x(), 0.0, 0.0);
+    let dy: Vec3 = Vec3::new(0.0, max.y() - min.y(), 0.0);
+    let dz: Vec3 = Vec3::new(0.0, 0.0, max.z() - min.z());
+
+    sides.add_obj(Box::new(Quad::new(Point3::new(min.x(), min.y(), max.z()), dx, dy, mat_idx)));
+    sides.add_obj(Box::new(Quad::new(Point3::new(max.x(), min.y(), max.z()), -dz, dy, mat_idx)));
+    sides.add_obj(Box::new(Quad::new(Point3::new(max.x(), min.y(), min.z()), -dx, dy, mat_idx)));
+    sides.add_obj(Box::new(Quad::new(Point3::new(min.x(), min.y(), min.z()), dz, dy, mat_idx)));
+    sides.add_obj(Box::new(Quad::new(Point3::new(min.x(), max.y(), max.z()), dx, -dz, mat_idx)));
+    sides.add_obj(Box::new(Quad::new(Point3::new(min.x(), min.y(), max.z()), dx, dz, mat_idx)));
+
+    sides
 }
 
 pub fn is_interior(a: f64, b: f64, rec: &mut HitRecord) -> bool {
@@ -59,7 +83,6 @@ impl Hittable for Quad {
         let planar_hitpt_vector: Vec3 = intersection - self.Q;
         let alpha: f64 = dot(&self.w, &cross(&planar_hitpt_vector, &self.v));
         let beta: f64 = dot(&self.w, &cross(&self.u, &planar_hitpt_vector));
-
         if !is_interior(alpha, beta, rec) {
             return false;
         }
@@ -78,5 +101,13 @@ impl Hittable for Quad {
 
     fn clone_dyn(&self) -> Box<dyn Hittable + Sync> {
         Box::new(self.clone())
+    }
+
+    fn get_mat(&self) -> usize {
+        self.mat_idx
+    }
+
+    fn set_mat(&mut self, mat_idx: usize) {
+        self.mat_idx = mat_idx;
     }
 }

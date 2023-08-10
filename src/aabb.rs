@@ -1,3 +1,4 @@
+use std::fmt;
 use std::ops;
 
 use crate::interval::*;
@@ -56,6 +57,12 @@ impl AABB {
             y: if self.y.size() >= delta {self.y} else {self.y.expand(delta)},
             z: if self.z.size() >= delta {self.z} else {self.z.expand(delta)}
         }
+    }
+}
+
+impl fmt::Display for AABB {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "({}, {}, {})", self.x, self.y, self.z)
     }
 }
 

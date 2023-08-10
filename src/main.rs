@@ -52,6 +52,7 @@ struct Args{
 }
 
 fn create_random_world(args: &Args) -> (World, Camera) {
+    println!("Setting up random sphere's scene.");
     let world: World = world::random_world();
     let mut cam: Camera = Camera::new();
     cam.origin = Point3::new(13.0, 2.0, 3.0);
@@ -64,6 +65,7 @@ fn create_random_world(args: &Args) -> (World, Camera) {
 }
 
 fn create_cornell_box(args: &Args) -> (World, Camera) {
+    println!("Setting up Cornell Box.");
     let world: World = world::cornell_box();
     let mut cam: Camera = Camera::new();
     cam.origin = Point3::new(278.0, 278.0, -800.0);
@@ -79,6 +81,7 @@ fn create_cornell_box(args: &Args) -> (World, Camera) {
 }
 
 fn create_quads(args: &Args) -> (World, Camera) {
+    println!("Setting up quad scene.");
     let world: World = world::quads();
     let mut cam: Camera = Camera::new();
     cam.origin = Point3::new(0.0, 0.0, 9.0);

@@ -1,4 +1,4 @@
-use std::ops;
+use std::{ops, fmt};
 
 #[derive(Copy, Default, Clone)]
 pub struct Interval {
@@ -25,6 +25,12 @@ impl Interval {
             min: self.min - padding,
             max: self.max + padding
         }
+    }
+}
+
+impl fmt::Display for Interval {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "({}, {})", self.min, self.max)
     }
 }
 
