@@ -5,6 +5,7 @@ edition = "2021"
 
 [dependencies]
 clap = {version="4.3.19", features = ["derive"] }
+clap-num = "1.0.2"
 rand = "0.8.5"
 threadpool = "1.8.1"
 
