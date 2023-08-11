@@ -72,5 +72,7 @@ impl ops::AddAssign<f64> for Interval {
     }
 }
 
+#[allow(dead_code)]
 pub const EMPTY: Interval = Interval{min: f64::INFINITY, max: f64::NEG_INFINITY};
+#[allow(dead_code)]
 pub const UNIVERSE: Interval = Interval{min: f64::NEG_INFINITY, max: f64::INFINITY};

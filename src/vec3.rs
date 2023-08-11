@@ -237,6 +237,7 @@ pub fn refract(v: &Vec3, n: &Vec3, ior:f64) -> Vec3 {
     return r_out_perp + r_out_parallel;
 }
 
+#[allow(dead_code)]
 pub fn lerp(x: &Vec3, y: &Vec3, s: f64) -> Vec3 {
     (*x * (1.0-s)) + (*y * s)
 }
@@ -258,6 +259,7 @@ pub fn random_unit_vector() -> Vec3 {
     return normalize(random_in_unit_sphere());
 }
 
+#[allow(dead_code)]
 pub fn randon_in_hemisphere(normal: &Vec3) -> Vec3 {
     let rnd_unit: Vec3 = random_unit_vector();
     if dot(&rnd_unit, normal) > 0.0 {

@@ -2,7 +2,7 @@ use std::{sync::Arc, cmp::Ordering};
 
 use rand::Rng;
 
-use crate::{aabb::*, hittable::Hittable, hittable_list::HittableList, ray, interval::Interval};
+use crate::{aabb::*, hittable::Hittable, hittable_list::HittableList, interval::Interval};
 
 #[derive(Clone, Default)]
 pub struct BVHNode {

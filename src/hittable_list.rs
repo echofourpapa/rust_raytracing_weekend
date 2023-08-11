@@ -15,6 +15,7 @@ pub struct HittableList {
 }
 
 impl HittableList {
+    #[allow(dead_code)]
     pub fn new(obj: Arc<dyn Hittable + Sync>) -> HittableList {
         let mut h: HittableList = HittableList::default();
         h.add_obj(obj);
