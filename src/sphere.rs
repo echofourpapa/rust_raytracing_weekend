@@ -1,33 +1,36 @@
+use std::sync::Arc;
+
 use crate::interval::*;
+use crate::material::Material;
 use crate::vec3::*;
 use crate::ray::*;
 use crate::hittable::*;
 use crate::aabb::*;
 
-#[derive(Copy, Clone)]
+#[derive(Clone)]
 pub struct Sphere {
     pub center: Point3,
     pub vector: Point3,
     pub radius: f64,
-    pub mat_idx: usize,
+    pub mat: Option<Arc<dyn Material + Sync>>,
     pub is_moving: bool,
     pub bbox: AABB
 }
 
 impl Sphere {
-    pub fn new_static(center: Point3, radius: f64, mat_idx:usize) -> Sphere {
+    pub fn new_static(center: Point3, radius: f64, mat: &Arc<dyn Material + Sync>) -> Sphere {
         let rvec = Vec3::new(radius, radius, radius);
         Sphere { 
             center: center, 
             vector: Vec3::zero(),
             radius: radius, 
-            mat_idx: mat_idx, 
+            mat: Some(mat.clone()), 
             is_moving: false,
             bbox: AABB::new(&(center-rvec), &(center+rvec) )
         }
     }
 
-    pub fn new_moving(center: Point3, end: Vec3, radius: f64, mat_idx:usize) -> Sphere {
+    pub fn new_moving(center: Point3, end: Vec3, radius: f64,  mat: &Arc<dyn Material + Sync>) -> Sphere {
         let rvec = Vec3::new(radius, radius, radius);
         let bbox1 = AABB::new(&(center-rvec), &(center+rvec) );
         let bbox2 = AABB::new(&(end-rvec), &(end+rvec) );
@@ -35,7 +38,7 @@ impl Sphere {
             center: center, 
             vector: end - center,
             radius: radius, 
-            mat_idx: mat_idx, 
+            mat: Some(mat.clone()), 
             is_moving: true,
             bbox: bbox1 + bbox2 
         }
@@ -80,24 +83,12 @@ impl Hittable for Sphere {
         rec.p = r.at(rec.t);
         let outward_normal = (rec.p - self.center(r.time)) /  self.radius;
         rec.set_face_normal(r, &outward_normal);
-        rec.mat_idx = self.mat_idx;
+        rec.mat = self.mat.clone();
 
         return true;
     }
-
-    fn clone_dyn(&self) -> Box<dyn Hittable + Sync> {
-        Box::new(self.clone())
-    }
-
+    
     fn bounding_box(&self) -> AABB {
         self.bbox
-    }
-
-    fn get_mat(&self) -> usize {
-        self.mat_idx
-    }
-
-    fn set_mat(&mut self, mat_idx: usize) {
-        self.mat_idx = mat_idx;
     }
 }

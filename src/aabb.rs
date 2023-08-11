@@ -7,9 +7,9 @@ use crate::ray::*;
 
 #[derive(Copy, Clone, Default)]
 pub struct AABB {
-    x: Interval,
-    y: Interval,
-    z: Interval
+    pub x: Interval,
+    pub y: Interval,
+    pub z: Interval
 }
 
 impl AABB {
@@ -77,12 +77,33 @@ impl ops::Add<AABB> for AABB {
     }
 }
 
+impl ops::Add<Vec3> for AABB {
+    type Output = AABB;
+    fn add(self, other: Vec3) -> AABB {
+        AABB {
+            x: self.x + other.x(),
+            y: self.y + other.y(),
+            z: self.z + other.z()
+        }
+    }
+}
+
 impl ops::AddAssign<AABB> for AABB {
     fn add_assign(&mut self, other: AABB) {
         *self = AABB {
             x: self.x + other.x,
             y: self.y + other.y,
             z: self.z + other.z
+        };
+    }
+}
+
+impl ops::AddAssign<Vec3> for AABB {
+    fn add_assign(&mut self, other: Vec3) {
+        *self = AABB {
+            x: self.x + other.x(),
+            y: self.y + other.y(),
+            z: self.z + other.z()
         };
     }
 }

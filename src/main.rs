@@ -4,7 +4,9 @@ use clap::Parser;
 use clap_num::number_range;
 
 use vec3::Point3;
-use world::World;
+
+use crate::hittable_list::HittableList;
+
 
 mod tga;
 mod vec3;
@@ -51,9 +53,9 @@ struct Args{
     threads: usize,
 }
 
-fn create_random_world(args: &Args) -> (World, Camera) {
+fn create_random_world(args: &Args) -> (HittableList, Camera) {
     println!("Setting up random sphere's scene.");
-    let world: World = world::random_world();
+    let world: HittableList = world::random_world();
     let mut cam: Camera = Camera::new();
     cam.origin = Point3::new(13.0, 2.0, 3.0);
     cam.image_width = args.width;
@@ -64,9 +66,9 @@ fn create_random_world(args: &Args) -> (World, Camera) {
     (world, cam)
 }
 
-fn create_cornell_box(args: &Args) -> (World, Camera) {
+fn create_cornell_box(args: &Args) -> (HittableList, Camera) {
     println!("Setting up Cornell Box.");
-    let world: World = world::cornell_box();
+    let world: HittableList = world::cornell_box();
     let mut cam: Camera = Camera::new();
     cam.origin = Point3::new(278.0, 278.0, -800.0);
     cam.target = Point3::new(278.0, 278.0, 0.0);
@@ -80,9 +82,9 @@ fn create_cornell_box(args: &Args) -> (World, Camera) {
     (world, cam)
 }
 
-fn create_quads(args: &Args) -> (World, Camera) {
+fn create_quads(args: &Args) -> (HittableList, Camera) {
     println!("Setting up quad scene.");
-    let world: World = world::quads();
+    let world: HittableList = world::quads();
     let mut cam: Camera = Camera::new();
     cam.origin = Point3::new(0.0, 0.0, 9.0);
     cam.vfov = 80.0;
@@ -95,8 +97,8 @@ fn create_quads(args: &Args) -> (World, Camera) {
     (world, cam)
 }
 
-fn error_world() -> (World, Camera) {
-    let world: World = World{..Default::default()};
+fn error_world() -> (HittableList, Camera) {
+    let world: HittableList = HittableList{..Default::default()};
     let cam: Camera = Camera::new();
     println!("Welcome to the void.  If you got here, find out why...");
     (world, cam)
@@ -110,7 +112,7 @@ fn main() -> Result<(), std::io::Error> {
         return Ok(());
     }
 
-    let world_cam: (World, Camera) = match args.demo_scene { 
+    let world_cam: (HittableList, Camera) = match args.demo_scene { 
         0=> create_random_world(&args),
         1=> create_cornell_box(&args),
         2=> create_quads(&args),
@@ -119,7 +121,7 @@ fn main() -> Result<(), std::io::Error> {
    
     // Camera
     let cam: Camera = world_cam.1;    
-    let world_arc: Arc<World> = Arc::new(world_cam.0);
+    let world_arc: Arc<HittableList> = Arc::new(world_cam.0);
     
     cam.render(&world_arc, args.threads, args.output)
 

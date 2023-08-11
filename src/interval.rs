@@ -53,5 +53,24 @@ impl ops::AddAssign<Interval> for Interval {
     }
 }
 
+impl ops::Add<f64> for Interval {
+    type Output = Interval;
+    fn add(self, other: f64) -> Interval {
+        Interval {
+            min: self.min + other,
+            max: self.max + other
+        }
+    }
+}
+
+impl ops::AddAssign<f64> for Interval {
+    fn add_assign(&mut self, other: f64) {
+        *self = Interval {
+            min: self.min + other,
+            max: self.max + other
+        };
+    }
+}
+
 pub const EMPTY: Interval = Interval{min: f64::INFINITY, max: f64::NEG_INFINITY};
 pub const UNIVERSE: Interval = Interval{min: f64::NEG_INFINITY, max: f64::INFINITY};

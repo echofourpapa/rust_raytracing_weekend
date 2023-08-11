@@ -2,9 +2,9 @@ use std::{io::{stdout, Write}, sync::{Arc, Mutex}, time::Instant, fs};
 use threadpool::ThreadPool;
 use rand::Rng;
 
-use crate::tga;
+use crate::{tga, hittable_list::HittableList};
 use crate::common::{saturate, seconds_to_hhmmss, degrees_to_radians};
-use crate::world::World;
+// use crate::world::World;
 use crate::ray::Ray;
 use crate::vec3::{Point3, Vec3, Color, normalize, cross, random_in_unit_disk};
 
@@ -119,7 +119,7 @@ impl Camera {
         )
     }
     
-    pub fn render(self, world_arc:&Arc<World>, threads:usize, output:std::path::PathBuf) -> Result<(), std::io::Error> {
+    pub fn render(self, world_arc:&Arc<HittableList>, threads:usize, output:std::path::PathBuf) -> Result<(), std::io::Error> {
         let max_threads: usize = threads;
         let pool: ThreadPool = ThreadPool::new(max_threads);
         let total_possible_threads: i32 = self.image_height * max_threads as i32;
@@ -138,7 +138,7 @@ impl Camera {
             for i in 0..max_threads {
                 pool.execute( {
                     let clone: Arc<Mutex<Vec<u8>>> = Arc::clone(&image_buffer);
-                    let world_clone: Arc<World> = world_arc.clone();
+                    let world_clone: Arc<HittableList> = world_arc.clone();
                     move || {
                         let scanline_start: i32 = (i as i32 * line_step).min(self.image_width);
                         let scanline_end: i32 = (scanline_start + line_step).min(self.image_width);
