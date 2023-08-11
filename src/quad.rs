@@ -10,28 +10,28 @@ use crate::aabb::*;
 
 #[derive(Clone)]
 pub struct Quad {
-    pub Q: Point3,
+    pub q: Point3,
     pub u: Vec3,
     pub v: Vec3,
     pub mat: Option<Arc<dyn Material + Sync>>,
     pub bbox: AABB,
     pub normal: Vec3,
-    pub D: f64,
+    pub d: f64,
     pub w: Vec3
 }
 
 impl Quad {
-    pub fn new(Q:Point3, u:Vec3, v:Vec3, mat: &Arc<dyn Material + Sync>) -> Quad {
+    pub fn new(q:Point3, u:Vec3, v:Vec3, mat: &Arc<dyn Material + Sync>) -> Quad {
         let n: Vec3 = cross(&u,&v);
-        let normal = normalize(n);
+        let normal: Vec3 = normalize(n);
         Quad {
-            Q:Q,
+            q,
             u:u,
             v:v,
             mat: Some(mat.clone()),
-            bbox: AABB::new(&Q, &(Q+ u + v)).pad(),
+            bbox: AABB::new(&q, &(q+ u + v)).pad(),
             normal: normal,
-            D: dot(&normal, &Q),
+            d: dot(&normal, &q),
             w: n / dot(&n, &n)
         }
     }
@@ -73,7 +73,7 @@ impl Hittable for Quad {
             return false;
         }
 
-        let t: f64 = (self.D - dot(&self.normal, &r.origin)) / denom;
+        let t: f64 = (self.d - dot(&self.normal, &r.origin)) / denom;
 
         if !ray_t.contains(t) {
             return false;
@@ -81,7 +81,7 @@ impl Hittable for Quad {
 
         let intersection: Vec3 = r.at(t);
 
-        let planar_hitpt_vector: Vec3 = intersection - self.Q;
+        let planar_hitpt_vector: Vec3 = intersection - self.q;
         let alpha: f64 = dot(&self.w, &cross(&planar_hitpt_vector, &self.v));
         let beta: f64 = dot(&self.w, &cross(&self.u, &planar_hitpt_vector));
         if !is_interior(alpha, beta, rec) {
