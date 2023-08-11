@@ -1,17 +1,13 @@
-use std::cmp::Ordering;
 use std::sync::Arc;
 
 use rand::Rng;
 
 use crate::hittable::*;
 use crate::hittable_list::HittableList;
-use crate::interval::*;
 use crate::quad::*;
-use crate::ray::*;
 use crate::material::*;
 use crate::sphere::*;
 use crate::vec3::*;
-use crate::aabb::*;
 use crate::bvh::*;
 
 pub fn quads() -> HittableList {

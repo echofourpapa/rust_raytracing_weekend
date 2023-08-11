@@ -14,7 +14,7 @@ unsafe fn struct_to_u8_slice<T>(s: &T) -> &[u8] {
 
 #[repr(C, packed)]
 #[derive(Default)]
-struct tga_color_map_spec {
+struct TgaColorMapSpec {
     map_start: u16,
     map_length: u16,
     map_depth: u8,
@@ -22,7 +22,7 @@ struct tga_color_map_spec {
 
 #[repr(C, packed)]
 #[derive(Default)]
-struct tga_image_spec{
+struct TgaImageSpec{
     x_origin: u16,
     y_origin: u16,
     image_width: u16,
@@ -33,32 +33,32 @@ struct tga_image_spec{
 
 #[repr(C, packed)]
 #[derive(Default)]
-struct tga_header{
+struct TgaHeader{
     id_legnth :u8,
     color_map_type : u8,
     image_type : u8,
-    color_map_spec: tga_color_map_spec,
-    image_spec : tga_image_spec,
+    color_map_spec: TgaColorMapSpec,
+    image_spec : TgaImageSpec,
 }
 
-fn get_tga_header(width: i32, height: i32) -> tga_header {
+fn get_tga_header(width: i32, height: i32) -> TgaHeader {
 
-    let color_spec = tga_color_map_spec{
-        ..tga_color_map_spec::default()
+    let color_spec: TgaColorMapSpec = TgaColorMapSpec{
+        ..TgaColorMapSpec::default()
     };
 
-    let img_spec = tga_image_spec {
+    let img_spec: TgaImageSpec = TgaImageSpec {
         image_width: width as u16,
         image_height: height as u16,
         pixel_depth: 24,
-        ..tga_image_spec::default()
+        ..TgaImageSpec::default()
     };
 
-    let header = tga_header{
+    let header: TgaHeader = TgaHeader{
         image_type: 2,
         color_map_spec: color_spec,
         image_spec: img_spec,
-        ..tga_header::default()
+        ..TgaHeader::default()
     };
 
     header
@@ -66,9 +66,9 @@ fn get_tga_header(width: i32, height: i32) -> tga_header {
 
 pub fn write_tga_file(width: i32, height: i32, image_data: &Vec<u8>, file_path: &PathBuf) -> Result<(), std::io::Error> {
 
-    let mut file = File::create(file_path)?;
+    let mut file: File = File::create(file_path)?;
 
-    let header = get_tga_header(width, height);
+    let header: TgaHeader = get_tga_header(width, height);
     let header_bytes: &[u8] = unsafe{ struct_to_u8_slice(&header) };
 
     file.write_all(header_bytes)?;
