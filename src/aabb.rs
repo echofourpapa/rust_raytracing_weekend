@@ -25,9 +25,9 @@ impl AABB {
     pub fn axis(&self, n:usize)-> &Interval {
         assert!(n <=2);
         match n {
+            0=> &self.x,
             1=> &self.y,
-            2=> &self.z,
-            _=> &self.x
+            _=> &self.z
         }
     }
 
@@ -62,7 +62,7 @@ impl AABB {
 
 impl fmt::Display for AABB {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "({}, {}, {})", self.x, self.y, self.z)
+        write!(f, "AABB({}, {}, {})", self.x, self.y, self.z)
     }
 }
 

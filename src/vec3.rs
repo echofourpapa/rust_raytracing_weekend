@@ -231,7 +231,7 @@ impl ops::Neg for Vec3 {
 
 impl fmt::Display for Vec3 {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "({}, {}, {})", self.x(), self.y(), self.z())
+        write!(f, "Vec3({}, {}, {})", self.x(), self.y(), self.z())
     }
 }
 

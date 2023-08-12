@@ -2,9 +2,8 @@ use std::{io::{stdout, Write}, sync::{Arc, Mutex}, time::Instant, fs};
 use threadpool::ThreadPool;
 use rand::Rng;
 
-use crate::{tga, hittable_list::HittableList};
+use crate::{tga, hittable::{HitRecord, Hittable}, interval::Interval, material::Material};
 use crate::common::{saturate, seconds_to_hhmmss, degrees_to_radians};
-// use crate::world::World;
 use crate::ray::Ray;
 use crate::vec3::{Point3, Vec3, Color, normalize, cross, random_in_unit_disk};
 
@@ -118,23 +117,50 @@ impl Camera {
             rand::thread_rng().gen_range(0.0..=self.delta_time)
         )
     }
+
+    pub fn ray_color(&self, world: &Arc<dyn Hittable + Sync>, r: &Ray, depth: i32) -> Color {
+        if depth <= 0 {
+            return Color::zero();
+        }
     
-    fn render_pixel(self, x:i32, y: i32, world: &Arc<HittableList>, buffer: &mut Vec<u8>) {
+        let mut rec: HitRecord = HitRecord{..HitRecord::default()};
+    
+        if world.hit(r, Interval { min: 0.001, max: f64::INFINITY }, &mut rec) {
+            let mut scattered: Ray = Ray{..Ray::default()};
+            let mut attenuation: Color = Color::zero();
+            let mat: &Arc<dyn Material + Sync> = rec.mat.as_ref().unwrap();
+            if mat.scatter(r, &rec, &mut attenuation, &mut scattered) {
+                // Uncomment to debug UVs
+                // attenuation.set_x(rec.u);
+                // attenuation.set_y(rec.v);
+                // attenuation.set_z(0.0);
+                return attenuation * self.ray_color(world, &scattered, depth-1); 
+            }
+            return Color::zero();
+        }
+        let unit_direction = normalize(r.direction);
+        let t: f64 = 0.5 * (unit_direction.y() + 1.0);
+        Color::one()*(1.0-t) + Color::new(0.5, 0.7, 1.0)*t
+    }
+    
+    fn render_pixel(self, x:i32, y: i32, world: &Arc<dyn Hittable + Sync>) -> Color {
         let mut pixel_color: Vec3 = Color::zero();
         for _s in 0..self.samples_per_pixel {
             let r: Ray = self.get_ray(x, y);
-            pixel_color += world.ray_color(&r, self.max_depth);
+            pixel_color += self.ray_color(world, &r, self.max_depth);
         }
-        let pos: i32 = (x + y * self.image_width) * 3;
-        write_color(buffer, &pixel_color, self.samples_per_pixel, pos as usize);
+        pixel_color
+
     }
 
-    fn render_single(&self, world_arc:&Arc<HittableList>, image_buffer: &Arc<Mutex<Vec<u8>>>, start: &Instant) {
+    fn render_single(&self, world_arc:&Arc<dyn Hittable + Sync>, image_buffer: &Arc<Mutex<Vec<u8>>>, start: &Instant) {
         let size: i32  = image_buffer.lock().unwrap().len() as i32;
         for y in 0..self.image_height {
-            for x in 0..self.image_width {
-                let mut v: std::sync::MutexGuard<'_, Vec<u8>> = image_buffer.lock().unwrap();
-                self.render_pixel(x, y, &world_arc, &mut v);
+            for x in 0..self.image_width {                
+                let pixel_color: Color = self.render_pixel(x, y, &world_arc);
+                let pos: i32 = (x + y * self.image_width) * 3;
+                let mut buffer: std::sync::MutexGuard<'_, Vec<u8>> = image_buffer.lock().unwrap();
+                write_color(&mut buffer, &pixel_color, self.samples_per_pixel, pos as usize);
 
                 let pos: i32 = (x + y * self.image_width) * 3;
                 let prog: f64 = pos as f64 / size as f64;
@@ -151,7 +177,7 @@ impl Camera {
         }
     }
 
-    fn render_multi(self, world_arc:&Arc<HittableList>, image_buffer: &Arc<Mutex<Vec<u8>>>, threads:usize, start: &Instant) {
+    fn render_multi(self, world_arc:&Arc<dyn Hittable + Sync>, image_buffer: &Arc<Mutex<Vec<u8>>>, threads:usize, start: &Instant) {
         let total_possible_threads: i32 = self.image_height * threads as i32;
 
         let line_step: i32 = self.image_width / threads as i32;
@@ -161,14 +187,16 @@ impl Camera {
         for y in 0..self.image_height {
             for i in 0..threads {
                 pool.execute( {
-                    let clone: Arc<Mutex<Vec<u8>>> = Arc::clone(&image_buffer);
-                    let world_clone: Arc<HittableList> = world_arc.clone();
+                    let image_buffer_clone: Arc<Mutex<Vec<u8>>> = Arc::clone(&image_buffer);
+                    let world_clone: Arc<dyn Hittable + Sync> = world_arc.clone();
                     move || {
                         let scanline_start: i32 = (i as i32 * line_step).min(self.image_width);
                         let scanline_end: i32 = (scanline_start + line_step).min(self.image_width);
                         for x in scanline_start..scanline_end {
-                            let mut v: std::sync::MutexGuard<'_, Vec<u8>> = clone.lock().unwrap();
-                            self.render_pixel(x, y, &world_clone, &mut v);
+                            let pixel_color = self.render_pixel(x, y, &world_clone);
+                            let pos: i32 = (x + y * self.image_width) * 3;
+                            let mut buffer: std::sync::MutexGuard<'_, Vec<u8>> = image_buffer_clone.lock().unwrap();
+                            write_color(&mut buffer, &pixel_color, self.samples_per_pixel, pos as usize);
                         }
                     }
                 });   
@@ -199,7 +227,7 @@ impl Camera {
         pool.join();
     }
 
-    pub fn render(&self, world_arc:&Arc<HittableList>, threads:usize, output:std::path::PathBuf) -> Result<(), std::io::Error> {
+    pub fn render(&self, world_arc:&Arc<dyn Hittable + Sync>, threads:usize, output:std::path::PathBuf) -> Result<(), std::io::Error> {
 
         println!("Image size: {}x{}, Samples: {}", self.image_width, self.image_height, self.samples_per_pixel);
         
@@ -208,6 +236,7 @@ impl Camera {
     
         // Start timer
         let start: Instant = Instant::now();
+
         if threads > 1{
             self.render_multi(world_arc, &image_buffer, threads, &start);
         } else {
@@ -222,7 +251,7 @@ impl Camera {
         Ok(())
     }
 
-    fn save_file(&self, image_data: &Vec<u8>, output:std::path::PathBuf) -> Result<(), std::io::Error> {
+    fn save_file(&self, image_data:&Vec<u8>, output:std::path::PathBuf) -> Result<(), std::io::Error> {
         println!("Saving to: {}", output.display());
         let dir: std::path::PathBuf = output.with_file_name("");
         if !(dir.exists() || dir.as_os_str().is_empty()) {

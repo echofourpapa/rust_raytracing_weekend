@@ -3,6 +3,7 @@ use camera::Camera;
 use clap::Parser;
 use clap_num::number_range;
 
+use hittable::Hittable;
 use vec3::Point3;
 
 use crate::hittable_list::HittableList;
@@ -38,7 +39,7 @@ struct Args{
     #[arg(short, long, long_help="Output image path.  Only TGA output is supported.", default_value="output/image.tga")]
     output: std::path::PathBuf,
 
-    #[arg(short, long, long_help="Demo scene to render:\n\t0 = Random Spheres\n\t1 = Cornell Box.\n\t2 = Qauds", value_parser=demo_scene_range, default_value_t=0)]
+    #[arg(short, long, long_help="Demo scene to render:\n\t0 = Random Spheres\n\t1 = Cornell Box.\n\t2 = Qauds", value_parser=demo_scene_range, default_value_t=1)]
     demo_scene: i32,
 
     #[arg(long, long_help="Output image width.", default_value_t=1920)]
@@ -47,7 +48,7 @@ struct Args{
     #[arg(long, long_help="Output image height.", default_value_t=1080)]
     height: i32,
 
-    #[arg(short, long, long_help="Samples per pixel.", default_value_t=50)]
+    #[arg(short, long, long_help="Samples per pixel.", default_value_t=256)]
     spp: i32,
 
     #[arg(short, long, long_help="Max ray bounce depth.", default_value_t=50)]
@@ -112,7 +113,8 @@ fn main() -> Result<(), std::io::Error> {
 
     let args: Args = Args::parse();
 
-    if !common::validate_path(&args.output) {
+    let mut output_path: std::path::PathBuf = args.output.clone();
+    if !common::validate_path(&mut output_path) {
         return Ok(());
     }
 
@@ -127,6 +129,6 @@ fn main() -> Result<(), std::io::Error> {
     let cam: Camera = world_cam.1;    
     let world_arc: Arc<HittableList> = Arc::new(world_cam.0);
     
-    cam.render(&world_arc, args.threads, args.output)
+    cam.render(&(world_arc as Arc<dyn Hittable + Sync>), args.threads, output_path)
 
 }

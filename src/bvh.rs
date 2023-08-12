@@ -25,7 +25,6 @@ impl BVHNode {
         assert!(object_span != 0);        
         
         let axis: usize = rand::thread_rng().gen_range(0..=2) as usize;
-
         let comparator: fn(&AABB, &AABB) -> Ordering = match axis {
             0=>box_x_compare,
             1=>box_y_compare,
@@ -49,10 +48,9 @@ impl BVHNode {
             }
             
         } else {   
-                     
-            objects[start..end].sort_unstable_by(
+            objects[start..end].sort_by(
                 |a, b| 
-                comparator(&a.bounding_box(), &b.bounding_box()) );
+                comparator(&b.bounding_box(), &a.bounding_box()) );
             let mid: usize = start + object_span/2;
             node.left = Some(Arc::new(BVHNode::new(&objects, start, mid)));
             node.right = Some(Arc::new(BVHNode::new(&objects, mid, end)));
@@ -91,7 +89,9 @@ impl Hittable for BVHNode {
         }
 
         let hit_left: bool = self.left.as_ref().unwrap().hit(r, ray_t, rec);
-        let hit_right: bool = self.right.as_ref().unwrap().hit(r, Interval { min: ray_t.min, max: if hit_left {rec.t} else {ray_t.max} }, rec);
+
+        let t_max: f64 = if hit_left {rec.t} else {ray_t.max};
+        let hit_right: bool = self.right.as_ref().unwrap().hit(r, Interval { min: ray_t.min, max: t_max }, rec);
 
         return hit_left || hit_right;
     }

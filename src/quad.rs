@@ -1,3 +1,4 @@
+use std::fmt;
 use std::sync::Arc;
 
 use crate::hittable_list::HittableList;
@@ -34,6 +35,12 @@ impl Quad {
             d: dot(&normal, &q),
             w: n / dot(&n, &n)
         }
+    }
+}
+
+impl fmt::Display for Quad {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "Quad(q:{}, u:{}, v:{}, normal:{}, d:{}, w:{}, bbox:{})", self.q, self.u, self.v, self.normal, self.d, self.w, self.bbox)
     }
 }
 

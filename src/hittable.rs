@@ -1,3 +1,4 @@
+use std::fmt;
 use std::sync::Arc;
 
 use crate::common::degrees_to_radians;
@@ -24,6 +25,12 @@ impl HitRecord {
         self.normal = if self.front_face {*outward_normal} else {-(*outward_normal)};
     }
     
+}
+
+impl fmt::Display for HitRecord {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "(p:{}, normal:{}, t:{}, u:{}, v:{}, front:{})", self.p, self.normal, self.t, self.u, self.v, self.front_face)
+    }
 }
 
 pub trait Hittable : Send {
@@ -90,11 +97,11 @@ impl RotateY {
         for i in 0..2 {
             for j  in 0..2{
                 for k in 0..2{
-                    let x: f64= i as f64 * bbox.x.max +(1-i) as f64 * bbox.x.min;
-                    let y: f64= j as f64 * bbox.x.max +(1-j) as f64 * bbox.x.min;
-                    let z: f64= k as f64 * bbox.x.max +(1-k) as f64 * bbox.x.min;
+                    let x: f64= (i as f64) * bbox.x.max + ((1-i) as f64) * bbox.x.min;
+                    let y: f64= (j as f64) * bbox.y.max + ((1-j) as f64) * bbox.y.min;
+                    let z: f64= (k as f64) * bbox.z.max + ((1-k) as f64) * bbox.z.min;
 
-                    let newx: f64 = cos_theta * x + sin_theta * z;
+                    let newx: f64 =  cos_theta * x + sin_theta * z;
                     let newz: f64 = -sin_theta * x + cos_theta * z;
 
                     let tester: Vec3 = Vec3::new(newx, y, newz);
@@ -127,17 +134,16 @@ impl Hittable for RotateY {
         direction[2] = self.sin_theta * r.direction[0] + self.cos_theta * r.direction[2];
 
         let rotated_r: Ray = Ray::new(origin, direction, r.time);
-
         if ! self.object.as_ref().unwrap().hit(&rotated_r, ray_t, rec) {
             return false;
         }
 
         let mut p: Vec3 = rec.p;
-        p[0] = self.cos_theta * rec.p[0] + self.sin_theta * rec.p[2];
+        p[0] =  self.cos_theta * rec.p[0] + self.sin_theta * rec.p[2];
         p[2] = -self.sin_theta * rec.p[0] + self.cos_theta * rec.p[2];
 
         let mut normal: Vec3 = rec.normal;
-        normal[0] = self.cos_theta * rec.normal[0] + self.sin_theta * rec.normal[2];
+        normal[0] =  self.cos_theta * rec.normal[0] + self.sin_theta * rec.normal[2];
         normal[2] = -self.sin_theta * rec.normal[0] + self.cos_theta * rec.normal[2];
 
         rec.p = p;
@@ -173,13 +179,14 @@ impl Scale {
 impl Hittable for Scale {
     fn hit(&self, r:&Ray, ray_t: Interval, rec: &mut HitRecord) -> bool {
         let inv_scale: Vec3 = 1.0 / self.scale;
-        let scaled_r: Ray = Ray::new(r.origin * inv_scale, r.direction * inv_scale, r.time);
-
+        let scaled_o: Vec3 = r.origin * inv_scale;
+        let scaled_d: Vec3 = ((r.origin + r.direction) * inv_scale) - scaled_o;
+        let scaled_r: Ray = Ray::new(scaled_o, scaled_d, r.time);
         if ! self.object.as_ref().unwrap().hit(&scaled_r, ray_t, rec) {
             return false;
         }
-
         rec.p *= self.scale;
+        rec.normal = normalize(rec.normal * self.scale);
         return true;
     }
 
