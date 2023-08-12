@@ -7,14 +7,6 @@ use crate::vec3::*;
 
 pub trait Material : Send {
     fn scatter(&self, ray_in: &Ray, rec: &HitRecord, color: &mut Color, scattered: &mut Ray) -> bool;
-    fn clone_dyn(&self) -> Box<dyn Material + Sync>;
-}
-
-
-impl Clone for Box<dyn Material + Sync> {
-    fn clone(&self) -> Self {
-        self.clone_dyn()
-    }
 }
 
 #[derive(Copy, Clone, Default)]
@@ -52,9 +44,6 @@ impl Material for Lambertian {
 
         return true;
     }
-    fn clone_dyn(&self) -> Box<dyn Material + Sync> {
-        Box::new(self.clone())
-    }
 }
 
 impl Material for Metal {
@@ -67,10 +56,6 @@ impl Material for Metal {
         *color = self.albedo;
 
         return dot(&scattered.direction, &rec.normal) > 0.0;
-    }
-
-    fn clone_dyn(&self) -> Box<dyn Material + Sync> {
-        Box::new(self.clone())
     }
 }
 
@@ -102,9 +87,5 @@ impl Material for Dielectric {
         *scattered = Ray::new(rec.p, direction, ray_in.time);
         
         return true;
-    }
-
-    fn clone_dyn(&self) -> Box<dyn Material + Sync> {
-        Box::new(self.clone())
     }
 }

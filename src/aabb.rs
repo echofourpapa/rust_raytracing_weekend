@@ -107,3 +107,24 @@ impl ops::AddAssign<Vec3> for AABB {
         };
     }
 }
+
+impl ops::Mul<Vec3> for AABB {
+    type Output = AABB;
+    fn mul(self, rhs: Vec3) -> AABB {
+        AABB {
+            x: self.x * rhs.x(),
+            y: self.y * rhs.y(),
+            z: self.z * rhs.z()
+        }
+    }
+}
+
+impl ops::MulAssign<Vec3> for AABB {
+    fn mul_assign(&mut self, rhs: Vec3)  {
+        *self = AABB {
+            x: self.x * rhs.x(),
+            y: self.y * rhs.y(),
+            z: self.z * rhs.z()
+        };
+    }
+}

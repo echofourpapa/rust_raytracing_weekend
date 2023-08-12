@@ -25,9 +25,9 @@ impl Quad {
         let n: Vec3 = cross(&u,&v);
         let normal: Vec3 = normalize(n);
         Quad {
-            q,
-            u:u,
-            v:v,
+            q: q,
+            u: u,
+            v: v,
             mat: Some(mat.clone()),
             bbox: AABB::new(&q, &(q+ u + v)).pad(),
             normal: normal,
@@ -35,6 +35,10 @@ impl Quad {
             w: n / dot(&n, &n)
         }
     }
+}
+
+pub fn make_cube(mat: &Arc<dyn Material + Sync>) -> HittableList {
+    make_box(&Vec3::zero(), &Vec3::one(), mat)
 }
 
 pub fn make_box(a: &Point3, b:&Point3, mat: &Arc<dyn Material + Sync>) -> HittableList {

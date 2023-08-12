@@ -68,13 +68,15 @@ pub fn cornell_box() -> HittableList {
         &white
     )));
 
-    let mut box1: Arc<dyn Hittable + Sync> = Arc::new(make_box(&Point3::new(0.0, 0.0, 0.0), &Point3::new(165.0, 330.0, 165.0), &white));
+    let mut box1: Arc<dyn Hittable + Sync> = Arc::new(make_cube(&white));
+    box1 = Arc::new(Scale::new(box1, Vec3::new(165.0, 330.0, 165.0)));
     box1 = Arc::new(RotateY::new(box1, 15.0));
     box1 = Arc::new(Translate::new(box1, &Vec3::new(265.0,0.0,295.0)));
     
     l_world.add_obj(box1);
 
-    let mut box2: Arc<dyn Hittable + Sync> = Arc::new(make_box(&Point3::new(0.0, 0.0, 0.0), &Point3::new(165.0, 165.0, 165.0), &white));
+    let mut box2: Arc<dyn Hittable + Sync> = Arc::new(make_cube(&white));
+    box2 = Arc::new(Scale::new(box2, Vec3::new(165.0, 165.0, 165.0)));
     box2 = Arc::new(RotateY::new(box2, -18.0));
     box2 = Arc::new(Translate::new(box2, &Vec3::new(130.0,0.0,65.0)));
     l_world.add_obj(box2);

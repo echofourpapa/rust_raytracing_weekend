@@ -150,3 +150,40 @@ impl Hittable for RotateY {
         self.bbox
     }
 }
+
+#[derive(Default, Clone)]
+pub struct Scale {
+    pub object: Option<Arc<dyn Hittable + Sync>>,
+    pub scale: Vec3,
+    pub bbox: AABB
+}
+
+impl Scale {
+    pub fn new(p: Arc<dyn Hittable + Sync>, scale: Vec3) -> Scale {
+        let bbox: AABB = p.bounding_box();
+        Scale {
+            object: Some(p),
+            scale : scale,
+            bbox: bbox * scale,
+        }
+    }
+    
+}
+
+impl Hittable for Scale {
+    fn hit(&self, r:&Ray, ray_t: Interval, rec: &mut HitRecord) -> bool {
+        let inv_scale: Vec3 = 1.0 / self.scale;
+        let scaled_r: Ray = Ray::new(r.origin * inv_scale, r.direction * inv_scale, r.time);
+
+        if ! self.object.as_ref().unwrap().hit(&scaled_r, ray_t, rec) {
+            return false;
+        }
+
+        rec.p *= self.scale;
+        return true;
+    }
+
+    fn bounding_box(&self) -> AABB {
+        self.bbox
+    }
+}

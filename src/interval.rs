@@ -72,6 +72,25 @@ impl ops::AddAssign<f64> for Interval {
     }
 }
 
+impl ops::Mul<f64> for Interval {
+    type Output = Interval;
+    fn mul(self, other: f64) -> Interval {
+        Interval {
+            min: self.min * other,
+            max: self.max * other
+        }
+    }
+}
+
+impl ops::MulAssign<f64> for Interval {
+    fn mul_assign(&mut self, other: f64) {
+        *self = Interval {
+            min: self.min * other,
+            max: self.max * other
+        };
+    }
+}
+
 #[allow(dead_code)]
 pub const EMPTY: Interval = Interval{min: f64::INFINITY, max: f64::NEG_INFINITY};
 #[allow(dead_code)]
