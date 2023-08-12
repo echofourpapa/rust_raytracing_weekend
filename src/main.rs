@@ -6,7 +6,7 @@ use clap_num::number_range;
 use hittable::Hittable;
 use vec3::Point3;
 
-use crate::hittable_list::HittableList;
+use crate::{hittable_list::HittableList, vec3::Color};
 
 
 mod tga;
@@ -67,6 +67,7 @@ fn create_random_world(args: &Args) -> (HittableList, Camera) {
     cam.image_height= args.height;
     cam.samples_per_pixel = args.spp;
     cam.max_depth = args.max_depth;
+    cam.background = Color::new(0.7, 0.8, 1.0);
     cam.initialize();
     (world, cam)
 }
@@ -83,6 +84,7 @@ fn create_cornell_box(args: &Args) -> (HittableList, Camera) {
     cam.image_height= args.height;
     cam.samples_per_pixel = args.spp;
     cam.max_depth = args.max_depth;
+    cam.background = Color::new(0.7, 0.8, 1.0);
     cam.initialize();
     (world, cam)
 }
@@ -98,6 +100,7 @@ fn create_quads(args: &Args) -> (HittableList, Camera) {
     cam.image_height= args.height;
     cam.samples_per_pixel = args.spp;
     cam.max_depth = args.max_depth;
+    cam.background = Color::new(0.7, 0.8, 1.0);
     cam.initialize();
     (world, cam)
 }

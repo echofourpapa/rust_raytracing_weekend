@@ -323,6 +323,10 @@ impl Color {
         Color::one()
     }
 
+    pub fn black() -> Color {
+        Color::zero()
+    }
+
     pub fn r(self: &Color) -> f64 {
         self.x()
     }

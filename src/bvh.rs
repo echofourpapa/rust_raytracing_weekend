@@ -50,7 +50,7 @@ impl BVHNode {
         } else {   
             objects[start..end].sort_by(
                 |a, b| 
-                comparator(&b.bounding_box(), &a.bounding_box()) );
+                comparator(&a.bounding_box(), &b.bounding_box()) );
             let mid: usize = start + object_span/2;
             node.left = Some(Arc::new(BVHNode::new(&objects, start, mid)));
             node.right = Some(Arc::new(BVHNode::new(&objects, mid, end)));

@@ -8,7 +8,8 @@ Working on completing [_Ray Tracing in One Weekend The Book Series_](https://ray
   * Bouding Volume Hiararchies: Done
   * Quadrilaterals: Done
   * Instances: Done
-  * Lights: In Progress
+  * Lights: Done
+  * Textures: In Progress
   
 
 ### [_Ray Tracing in One Weekend_](https://raytracing.github.io/books/RayTracingInOneWeekend.html)

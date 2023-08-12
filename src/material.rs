@@ -7,6 +7,7 @@ use crate::vec3::*;
 
 pub trait Material : Send {
     fn scatter(&self, ray_in: &Ray, rec: &HitRecord, color: &mut Color, scattered: &mut Ray) -> bool;
+    fn emitted(&self) -> Color;
 }
 
 #[derive(Copy, Clone, Default)]
@@ -23,6 +24,11 @@ pub struct Metal {
 #[derive(Copy, Clone, Default)]
 pub struct Dielectric {
     pub ior: f64
+}
+
+#[derive(Copy, Clone, Default)]
+pub struct Emiter {
+    pub emission: Color
 }
 
 impl Metal {
@@ -44,6 +50,10 @@ impl Material for Lambertian {
 
         return true;
     }
+
+    fn emitted(&self) -> Color {
+        Color::black()
+    }
 }
 
 impl Material for Metal {
@@ -56,6 +66,10 @@ impl Material for Metal {
         *color = self.albedo;
 
         return dot(&scattered.direction, &rec.normal) > 0.0;
+    }
+
+    fn emitted(&self) -> Color {
+        Color::black()
     }
 }
 
@@ -87,5 +101,19 @@ impl Material for Dielectric {
         *scattered = Ray::new(rec.p, direction, ray_in.time);
         
         return true;
+    }
+
+    fn emitted(&self) -> Color {
+        Color::black()
+    }
+}
+
+impl Material for Emiter {
+    fn scatter(&self, _ray_in: &Ray, _rec: &HitRecord, _color: &mut Color, _scattered: &mut Ray) -> bool {
+        false
+    }
+
+    fn emitted(&self) -> Color {
+        self.emission
     }
 }

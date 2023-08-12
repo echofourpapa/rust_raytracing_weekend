@@ -20,6 +20,7 @@ pub struct Camera {
     pub defocus_angle: f64,
     pub focus_dist: f64,
     pub delta_time: f64,
+    pub background: Color,
     viewport_upper_left: Point3,
     pixel_delta_u: Vec3,
     pixel_delta_v: Vec3,
@@ -43,6 +44,7 @@ impl Default for Camera {
             defocus_angle: 0.1,
             focus_dist: 10.0,
             delta_time: 0.0,
+            background: Color::black(),
             viewport_upper_left: Point3::zero(),
             pixel_delta_u: Point3::zero(),
             pixel_delta_v: Point3::zero(),
@@ -120,27 +122,26 @@ impl Camera {
 
     pub fn ray_color(&self, world: &Arc<dyn Hittable + Sync>, r: &Ray, depth: i32) -> Color {
         if depth <= 0 {
-            return Color::zero();
+            return Color::black();
         }
     
         let mut rec: HitRecord = HitRecord{..HitRecord::default()};
     
-        if world.hit(r, Interval { min: 0.001, max: f64::INFINITY }, &mut rec) {
-            let mut scattered: Ray = Ray{..Ray::default()};
-            let mut attenuation: Color = Color::zero();
-            let mat: &Arc<dyn Material + Sync> = rec.mat.as_ref().unwrap();
-            if mat.scatter(r, &rec, &mut attenuation, &mut scattered) {
-                // Uncomment to debug UVs
-                // attenuation.set_x(rec.u);
-                // attenuation.set_y(rec.v);
-                // attenuation.set_z(0.0);
-                return attenuation * self.ray_color(world, &scattered, depth-1); 
-            }
-            return Color::zero();
+        if !world.hit(r, Interval { min: 0.001, max: f64::INFINITY }, &mut rec) {
+            return self.background;
         }
-        let unit_direction = normalize(r.direction);
-        let t: f64 = 0.5 * (unit_direction.y() + 1.0);
-        Color::one()*(1.0-t) + Color::new(0.5, 0.7, 1.0)*t
+
+        let mut scattered: Ray = Ray{..Ray::default()};
+        let mut attenuation: Color = Color::zero();
+        let mat: &Arc<dyn Material + Sync> = rec.mat.as_ref().unwrap();
+
+        let light_color: Color = mat.emitted();
+        if !mat.scatter(r, &rec, &mut attenuation, &mut scattered) {
+            return light_color;
+        }
+        let material_color: Color = attenuation * self.ray_color(world, &scattered, depth-1); 
+
+        return light_color + material_color;
     }
     
     fn render_pixel(self, x:i32, y: i32, world: &Arc<dyn Hittable + Sync>) -> Color {
@@ -223,7 +224,6 @@ impl Camera {
             queued = pool.queued_count();
             total = active + queued;
         }
-        
         pool.join();
     }
 
@@ -243,7 +243,7 @@ impl Camera {
             self.render_single(world_arc, &image_buffer, &start);
         }
 
-        println!("Total render time: {}", seconds_to_hhmmss(start.elapsed().as_secs_f64()));
+        println!("\nTotal render time: {}", seconds_to_hhmmss(start.elapsed().as_secs_f64()));
     
         self.save_file(&*image_buffer.lock().unwrap(), output)?;
     

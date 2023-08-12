@@ -36,6 +36,7 @@ pub fn cornell_box() -> HittableList {
     let red  : Arc<dyn Material + Sync> = Arc::new(Lambertian{albedo: Color::new(0.65, 0.05,0.05)});
     let white: Arc<dyn Material + Sync> = Arc::new(Lambertian{albedo: Color::new(0.73, 0.73,0.73)});
     let green: Arc<dyn Material + Sync> = Arc::new(Lambertian{albedo: Color::new(0.12, 0.45,0.15)});
+    let light: Arc<dyn Material + Sync> = Arc::new(Emiter{ emission: Color::new(15.0, 15.0, 15.0) });
 
     l_world.add_obj(Arc::new(Quad::new(
         Point3::new(555.0, 0.0, 0.0),
@@ -48,6 +49,12 @@ pub fn cornell_box() -> HittableList {
         Point3::new(0.0, 555.0, 0.0),
         Point3::new(0.0, 0.0, 555.0), 
         &red
+    )));
+    l_world.add_obj(Arc::new(Quad::new(
+        Point3::new(343.0, 554.0, 332.0),
+        Point3::new(-130.0, 0.0, 0.0),
+        Point3::new(0.0, 0.0, -105.0), 
+        &light
     )));
     l_world.add_obj(Arc::new(Quad::new(
         Point3::new(0.0, 0.0, 0.0),
