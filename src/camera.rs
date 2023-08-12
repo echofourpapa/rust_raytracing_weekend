@@ -119,66 +119,91 @@ impl Camera {
         )
     }
     
+    fn render_pixel(self, x:i32, y: i32, world: &Arc<HittableList>, buffer: &mut Vec<u8>) {
+        let mut pixel_color: Vec3 = Color::zero();
+        for _s in 0..self.samples_per_pixel {
+            let r: Ray = self.get_ray(x, y);
+            pixel_color += world.ray_color(&r, self.max_depth);
+        }
+        let pos: i32 = (x + y * self.image_width) * 3;
+        write_color(buffer, &pixel_color, self.samples_per_pixel, pos as usize);
+    }
+
     pub fn render(self, world_arc:&Arc<HittableList>, threads:usize, output:std::path::PathBuf) -> Result<(), std::io::Error> {
-        let max_threads: usize = threads;
-        let pool: ThreadPool = ThreadPool::new(max_threads);
-        let total_possible_threads: i32 = self.image_height * max_threads as i32;
-    
+
         println!("Image size: {}x{}, Samples: {}", self.image_width, self.image_height, self.samples_per_pixel);
-        println!("{} threads per scanline, total thread count: {}", max_threads, total_possible_threads);
+        
         let size: i32 = self.image_width * self.image_width * 3;
         let image_buffer: Arc<Mutex<Vec<u8>>> = Arc::new(Mutex::new(vec![0; size as usize]));
     
-        let line_step: i32 = self.image_width / max_threads as i32;
-    
         // Start timer
         let start: Instant = Instant::now();
-    
-        for y in 0..self.image_height {
-            for i in 0..max_threads {
-                pool.execute( {
-                    let clone: Arc<Mutex<Vec<u8>>> = Arc::clone(&image_buffer);
-                    let world_clone: Arc<HittableList> = world_arc.clone();
-                    move || {
-                        let scanline_start: i32 = (i as i32 * line_step).min(self.image_width);
-                        let scanline_end: i32 = (scanline_start + line_step).min(self.image_width);
-                        for x in scanline_start..scanline_end {
-                            let mut pixel_color: Vec3 = Color::zero();
-                            for _s in 0..self.samples_per_pixel {
-                                let r: Ray = self.get_ray(x, y);
-                                pixel_color += world_clone.ray_color(&r, self.max_depth);
+        if threads > 1{
+            let total_possible_threads: i32 = self.image_height * threads as i32;
+
+            let line_step: i32 = self.image_width / threads as i32;
+            let pool: ThreadPool = ThreadPool::new(threads);
+            println!("{} threads per scanline, total thread count: {}", threads, total_possible_threads);
+
+            for y in 0..self.image_height {
+                for i in 0..threads {
+                    pool.execute( {
+                        let clone: Arc<Mutex<Vec<u8>>> = Arc::clone(&image_buffer);
+                        let world_clone: Arc<HittableList> = world_arc.clone();
+                        move || {
+                            let scanline_start: i32 = (i as i32 * line_step).min(self.image_width);
+                            let scanline_end: i32 = (scanline_start + line_step).min(self.image_width);
+                            for x in scanline_start..scanline_end {
+                                let mut v: std::sync::MutexGuard<'_, Vec<u8>> = clone.lock().unwrap();
+                                self.render_pixel(x, y, &world_clone, &mut v);
                             }
-                            let pos: i32 = (x + y * self.image_width) * 3;
-                            let mut v: std::sync::MutexGuard<'_, Vec<u8>> = clone.lock().unwrap();
-                            write_color(&mut v, &pixel_color, self.samples_per_pixel, pos as usize);
                         }
-                    }
-                });   
+                    });   
+                }
+            }
+        
+            let mut active: usize = pool.active_count();
+            let mut queued: usize = pool.queued_count();
+            let mut total:usize = active + queued;
+            while total > 0 {
+                let finished: i32 = total_possible_threads - total as i32;
+                let prog: f64 = finished as f64 / total_possible_threads as f64;
+                let t: f64 = start.elapsed().as_secs_f64();
+                let estimate: f64 = if finished > 0 {(t/finished as f64) * total_possible_threads as f64} else {0.0};
+                print!("\r{} Active, {} Remaining, {:.2}% Complete, Running time: {}, Time Remaining {}",
+                    active, 
+                    queued,
+                    prog * 100.0,
+                    seconds_to_hhmmss(t),
+                    seconds_to_hhmmss(estimate - t)
+                );
+                stdout().flush().unwrap();
+                active = pool.active_count();
+                queued = pool.queued_count();
+                total = active + queued;
+            }
+            
+            pool.join();
+        } else {
+            for y in 0..self.image_height {
+                for x in 0..self.image_width {
+                    let mut v: std::sync::MutexGuard<'_, Vec<u8>> = image_buffer.lock().unwrap();
+                    self.render_pixel(x, y, &world_arc, &mut v);
+
+                    let pos: i32 = (x + y * self.image_width) * 3;
+                    let prog: f64 = pos as f64 / size as f64;
+                    let t: f64 = start.elapsed().as_secs_f64();
+                    let estimate: f64 = if pos > 0 {(t/pos as f64) * size as f64} else {0.0};
+
+                    print!("\r{:.2}% Complete, Running time: {}, Time Remaining {}",
+                    prog * 100.0,
+                    seconds_to_hhmmss(t),
+                    seconds_to_hhmmss(estimate - t)
+                );
+                }
+                stdout().flush().unwrap();
             }
         }
-    
-        let mut active: usize = pool.active_count();
-        let mut queued: usize = pool.queued_count();
-        let mut total:usize = active + queued;
-        while total > 0 {
-            let finished: i32 = total_possible_threads - total as i32;
-            let prog: f64 = finished as f64 / total_possible_threads as f64;
-            let t: f64 = start.elapsed().as_secs_f64();
-            let estimate: f64 = if finished > 0 {(t/finished as f64) * total_possible_threads as f64} else {0.0};
-            print!("\r{} Active, {} Remaining, {:.2}% Complete, Running time: {}, Time Remaining {}",
-                active, 
-                queued,
-                prog * 100.0,
-                seconds_to_hhmmss(t),
-                seconds_to_hhmmss(estimate - t)
-            );
-            stdout().flush().unwrap();
-            active = pool.active_count();
-            queued = pool.queued_count();
-            total = active + queued;
-        }
-        
-        pool.join();
         println!("Total render time: {}", seconds_to_hhmmss(start.elapsed().as_secs_f64()));
     
         println!("Saving to: {}", output.display());

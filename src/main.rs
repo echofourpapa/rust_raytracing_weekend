@@ -28,6 +28,10 @@ fn demo_scene_range(s: &str) -> Result<i32, String> {
     number_range(s, 0, 2)
 }
 
+fn thread_range(s: &str) -> Result<usize, String> {
+    number_range(s, 1, thread::available_parallelism().unwrap().get())
+}
+
 #[derive(Parser, Debug)]
 #[command(author, version, about, long_about=None)]
 struct Args{
@@ -49,7 +53,7 @@ struct Args{
     #[arg(short, long, long_help="Max ray bounce depth.", default_value_t=50)]
     max_depth: i32,
 
-    #[arg(short, long, long_help="Max number of threads.", default_value_t=thread::available_parallelism().unwrap().get())]
+    #[arg(short, long, long_help="Max number of threads. 1 means disable threading.", value_parser=thread_range, default_value_t=thread::available_parallelism().unwrap().get())]
     threads: usize,
 }
 
