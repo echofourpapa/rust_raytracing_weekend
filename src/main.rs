@@ -23,6 +23,7 @@ mod world;
 mod bvh;
 mod interval;
 mod quad;
+mod texture;
 
 
 fn demo_scene_range(s: &str) -> Result<i32, String> {

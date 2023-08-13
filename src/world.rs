@@ -7,17 +7,19 @@ use crate::hittable_list::HittableList;
 use crate::quad::*;
 use crate::material::*;
 use crate::sphere::*;
+use crate::texture::CheckerTexture;
+use crate::texture::Texture;
 use crate::vec3::*;
 use crate::bvh::*;
 
 pub fn quads() -> HittableList {
     let mut l_world: HittableList = HittableList{..HittableList::default()};
 
-    let left_red     : Arc<dyn Material + Sync> = Arc::new(Lambertian{albedo: Color::new(1.0, 0.2, 0.2)});
-    let back_green   : Arc<dyn Material + Sync> = Arc::new(Lambertian{albedo: Color::new(0.2, 1.0, 0.2)});
-    let right_blue   : Arc<dyn Material + Sync> = Arc::new(Lambertian{albedo: Color::new(0.2, 0.2, 1.0)});
-    let upper_orange : Arc<dyn Material + Sync> = Arc::new(Lambertian{albedo: Color::new(1.2, 0.5, 0.5)});
-    let lower_teal   : Arc<dyn Material + Sync> = Arc::new(Lambertian{albedo: Color::new(0.2, 0.8, 0.8)});
+    let left_red     : Arc<dyn Material + Sync> = Arc::new(Lambertian::new(Color::new(1.0, 0.2, 0.2)));
+    let back_green   : Arc<dyn Material + Sync> = Arc::new(Lambertian::new(Color::new(0.2, 1.0, 0.2)));
+    let right_blue   : Arc<dyn Material + Sync> = Arc::new(Lambertian::new(Color::new(0.2, 0.2, 1.0)));
+    let upper_orange : Arc<dyn Material + Sync> = Arc::new(Lambertian::new(Color::new(1.2, 0.5, 0.5)));
+    let lower_teal   : Arc<dyn Material + Sync> = Arc::new(Lambertian::new(Color::new(0.2, 0.8, 0.8)));
 
     l_world.add_obj(Arc::new(Quad::new(Point3::new(-3.0, -2.0, 5.0), Point3::new(0.0, 0.0,-4.0), Point3::new(0.0, 4.0, 0.0), &left_red)));
     l_world.add_obj(Arc::new(Quad::new(Point3::new(-2.0, -2.0, 0.0), Point3::new(4.0, 0.0, 0.0), Point3::new(0.0, 4.0, 0.0), &back_green)));
@@ -33,10 +35,12 @@ pub fn quads() -> HittableList {
 pub fn cornell_box() -> HittableList {
     let mut l_world: HittableList = HittableList{..HittableList::default()};
 
-    let red  : Arc<dyn Material + Sync> = Arc::new(Lambertian{albedo: Color::new(0.65, 0.05,0.05)});
-    let white: Arc<dyn Material + Sync> = Arc::new(Lambertian{albedo: Color::new(0.73, 0.73,0.73)});
-    let green: Arc<dyn Material + Sync> = Arc::new(Lambertian{albedo: Color::new(0.12, 0.45,0.15)});
+    let red  : Arc<dyn Material + Sync> = Arc::new(Lambertian::new(Color::new(0.65, 0.05,0.05)));
+    let white: Arc<dyn Material + Sync> = Arc::new(Lambertian::new(Color::new(0.73, 0.73,0.73)));
+    let green: Arc<dyn Material + Sync> = Arc::new(Lambertian::new(Color::new(0.12, 0.45,0.15)));
     let light: Arc<dyn Material + Sync> = Arc::new(Emiter{ emission: Color::new(15.0, 15.0, 15.0) });
+    let checker: Arc<dyn Texture + Sync> = Arc::new(CheckerTexture::new(Color::new(0.2, 0.2, 0.2), Color::new(0.8, 0.8, 0.8), 10.0));
+    let bottom: Arc<dyn Material + Sync> = Arc::new(Lambertian::new_texture(&checker));
 
     l_world.add_obj(Arc::new(Quad::new(
         Point3::new(555.0, 0.0, 0.0),
@@ -60,7 +64,7 @@ pub fn cornell_box() -> HittableList {
         Point3::new(0.0, 0.0, 0.0),
         Point3::new(555.0, 0.0, 0.0),
         Point3::new(0.0, 0.0, 555.0), 
-        &white
+        &bottom
     )));
     l_world.add_obj(Arc::new(Quad::new(
         Point3::new(555.0, 555.0, 555.0),
@@ -96,11 +100,11 @@ pub fn cornell_box() -> HittableList {
 pub fn random_world() -> HittableList {
     let mut l_world: HittableList = HittableList{..HittableList::default()};
 
-    let ground_mat: Arc<dyn Material + Sync> = Arc::new(Lambertian{albedo: Color::new(0.5, 0.5,0.5)});
+    let ground_mat: Arc<dyn Material + Sync> = Arc::new(Lambertian::new(Color::new(0.5, 0.5,0.5)));
 
     l_world.add_obj(Arc::new(Sphere::new_static(Point3::new(0.0, -1000.0, -1.0), 1000.0, &ground_mat)));
 
-    let left_mat: Arc<dyn Material + Sync> = Arc::new(Lambertian{albedo: Color::new(0.4, 0.2, 0.1)});
+    let left_mat: Arc<dyn Material + Sync> = Arc::new(Lambertian::new(Color::new(0.4, 0.2, 0.1)));
     let center_mat: Arc<dyn Material + Sync> = Arc::new(Dielectric{ior:1.5});
     let right_mat: Arc<dyn Material + Sync> = Arc::new(Metal::new(Color::new(0.7, 0.6, 0.5), 0.0));
 
@@ -124,7 +128,7 @@ pub fn random_world() -> HittableList {
                 if choose_mat < 0.8 {
                     // Diffuse
                     let albedo:Color = Color::random() * Color::random();
-                    let mat: Arc<dyn Material + Sync> = Arc::new(Lambertian{albedo: albedo});
+                    let mat: Arc<dyn Material + Sync> = Arc::new(Lambertian::new(albedo));
                     if choose_mat < 0.7 {
                         l_world.add_obj(Arc::new(Sphere::new_static(center, 0.2, &mat)));
                     } else {

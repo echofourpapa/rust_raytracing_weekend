@@ -1,8 +1,12 @@
+use std::sync::Arc;
+
 use rand::Rng;
 
 use crate::common::*;
 use crate::hittable::*;
 use crate::ray::*;
+use crate::texture::SolidColorTexture;
+use crate::texture::Texture;
 use crate::vec3::*;
 
 pub trait Material : Send {
@@ -10,9 +14,9 @@ pub trait Material : Send {
     fn emitted(&self) -> Color;
 }
 
-#[derive(Copy, Clone, Default)]
+#[derive(Clone, Default)]
 pub struct Lambertian {
-    pub albedo: Color
+    pub albedo: Option<Arc<dyn Texture + Sync>>
 }
 
 #[derive(Copy, Clone, Default)]
@@ -31,6 +35,20 @@ pub struct Emiter {
     pub emission: Color
 }
 
+impl Lambertian {
+    pub fn new(albedo: Color) -> Lambertian {
+        Lambertian {
+            albedo: Some(Arc::new(SolidColorTexture{color: albedo}))
+        }
+    }
+
+    pub fn new_texture(albedo: &Arc<dyn Texture + Sync>) -> Lambertian {
+        Lambertian {
+            albedo: Some(albedo.to_owned())
+        }
+    }
+}
+
 impl Metal {
     pub fn new(albedo:Color, roughness:f64) -> Metal {
         Metal{albedo:albedo, roughness: saturate(roughness) }
@@ -46,7 +64,7 @@ impl Material for Lambertian {
         }
 
         *scattered = Ray::new(rec.p, scatter_direction, ray_in.time);
-        *color = self.albedo;
+        *color = self.albedo.as_ref().unwrap().value(rec.u, rec.v);
 
         return true;
     }
