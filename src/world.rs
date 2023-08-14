@@ -1,3 +1,4 @@
+use std::path::PathBuf;
 use std::sync::Arc;
 
 use rand::Rng;
@@ -8,6 +9,7 @@ use crate::quad::*;
 use crate::material::*;
 use crate::sphere::*;
 use crate::texture::CheckerTexture;
+use crate::texture::ImageTexture;
 use crate::texture::Texture;
 use crate::vec3::*;
 use crate::bvh::*;
@@ -39,6 +41,7 @@ pub fn cornell_box() -> HittableList {
     let white: Arc<dyn Material + Sync> = Arc::new(Lambertian::new(Color::new(0.73, 0.73,0.73)));
     let green: Arc<dyn Material + Sync> = Arc::new(Lambertian::new(Color::new(0.12, 0.45,0.15)));
     let light: Arc<dyn Material + Sync> = Arc::new(Emiter{ emission: Color::new(15.0, 15.0, 15.0) });
+
     let checker: Arc<dyn Texture + Sync> = Arc::new(CheckerTexture::new(Color::new(0.2, 0.2, 0.2), Color::new(0.8, 0.8, 0.8), 10.0));
     let bottom: Arc<dyn Material + Sync> = Arc::new(Lambertian::new_texture(&checker));
 
@@ -86,11 +89,20 @@ pub fn cornell_box() -> HittableList {
     
     l_world.add_obj(box1);
 
-    let mut box2: Arc<dyn Hittable + Sync> = Arc::new(make_cube(&white));
-    box2 = Arc::new(Scale::new(box2, Vec3::new(165.0, 165.0, 165.0)));
-    box2 = Arc::new(RotateY::new(box2, -18.0));
-    box2 = Arc::new(Translate::new(box2, &Vec3::new(130.0,0.0,65.0)));
-    l_world.add_obj(box2);
+    // let mut box2: Arc<dyn Hittable + Sync> = Arc::new(make_cube(&white));
+    // box2 = Arc::new(Scale::new(box2, Vec3::new(165.0, 165.0, 165.0)));
+    // box2 = Arc::new(RotateY::new(box2, -18.0));
+    // box2 = Arc::new(Translate::new(box2, &Vec3::new(130.0,0.0,65.0)));
+    // l_world.add_obj(box2);
+
+    let earth_texture: Arc<dyn Texture + Sync> = Arc::new(ImageTexture::new(&PathBuf::from("input/earthmap.tga")));
+    let earth_mat: Arc<dyn Material + Sync> = Arc::new(Lambertian::new_texture(&earth_texture));
+    let mut earth: Arc<dyn Hittable + Sync> = Arc::new(Sphere::new_static(Point3::zero(), 90.0, &earth_mat));
+    // Could use scale here, or radius.  To use scale, set radius to 1.0
+    // earth = Arc::new(Scale::new(earth, Vec3::new(90.0, 90.0, 90.0)));
+    earth = Arc::new(RotateY::new(earth, 180.0));
+    earth = Arc::new(Translate::new(earth, &Vec3::new(190.0,90.0,190.0)));
+    l_world.add_obj(earth);
 
     let mut world: HittableList = HittableList{..HittableList::default()};
     world.add_obj(Arc::new(BVHNode::new_list(&l_world)));

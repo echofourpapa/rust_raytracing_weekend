@@ -11,7 +11,7 @@ use crate::vec3::*;
 
 pub trait Material : Send {
     fn scatter(&self, ray_in: &Ray, rec: &HitRecord, color: &mut Color, scattered: &mut Ray) -> bool;
-    fn emitted(&self) -> Color;
+    fn emitted(&self, rec: &HitRecord) -> Color;
 }
 
 #[derive(Clone, Default)]
@@ -64,12 +64,12 @@ impl Material for Lambertian {
         }
 
         *scattered = Ray::new(rec.p, scatter_direction, ray_in.time);
-        *color = self.albedo.as_ref().unwrap().value(rec.u, rec.v);
+        *color = self.albedo.as_ref().unwrap().value(rec.uvw.x(), rec.uvw.y(), rec.uvw.z());
 
         return true;
     }
 
-    fn emitted(&self) -> Color {
+    fn emitted(&self, _rec: &HitRecord) -> Color {
         Color::black()
     }
 }
@@ -86,7 +86,7 @@ impl Material for Metal {
         return dot(&scattered.direction, &rec.normal) > 0.0;
     }
 
-    fn emitted(&self) -> Color {
+    fn emitted(&self, _rec: &HitRecord) -> Color {
         Color::black()
     }
 }
@@ -121,7 +121,7 @@ impl Material for Dielectric {
         return true;
     }
 
-    fn emitted(&self) -> Color {
+    fn emitted(&self, _rec: &HitRecord) -> Color {
         Color::black()
     }
 }
@@ -131,7 +131,11 @@ impl Material for Emiter {
         false
     }
 
-    fn emitted(&self) -> Color {
-        self.emission
+    fn emitted(&self, rec: &HitRecord) -> Color {
+        if rec.front_face{
+            self.emission
+        } else {
+            Color::black()
+        }
     }
 }

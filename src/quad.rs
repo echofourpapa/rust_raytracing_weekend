@@ -72,8 +72,7 @@ pub fn is_interior(a: f64, b: f64, rec: &mut HitRecord) -> bool {
     if (a < 0.0) || (1.0 < a) || (b < 0.0) || (1.0 < b) {
         return false;
     }
-    rec.u = a;
-    rec.v = b;
+    rec.uvw = Vec3::new(a, b, 0.0);
     return true;
 }
 

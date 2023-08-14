@@ -14,8 +14,7 @@ pub struct HitRecord {
     pub normal: Vec3,
     pub mat: Option<Arc<dyn Material + Sync>>,
     pub t: f64,
-    pub u: f64,
-    pub v: f64,
+    pub uvw: Vec3,
     pub front_face: bool
 }
 
@@ -29,7 +28,7 @@ impl HitRecord {
 
 impl fmt::Display for HitRecord {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "(p:{}, normal:{}, t:{}, u:{}, v:{}, front:{})", self.p, self.normal, self.t, self.u, self.v, self.front_face)
+        write!(f, "(p:{}, normal:{}, t:{}, uvw:{}, front:{})", self.p, self.normal, self.t, self.uvw, self.front_face)
     }
 }
 

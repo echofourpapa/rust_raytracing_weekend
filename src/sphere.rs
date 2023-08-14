@@ -1,3 +1,4 @@
+use std::f64::consts::PI;
 use std::sync::Arc;
 
 use crate::interval::*;
@@ -15,6 +16,15 @@ pub struct Sphere {
     pub mat: Option<Arc<dyn Material + Sync>>,
     pub is_moving: bool,
     pub bbox: AABB
+}
+
+pub fn get_sphere_uvw(p:&Point3) -> Vec3 {
+    let theta: f64 = (-p.y()).acos();
+    let phi:f64 = (-p.z()).atan2(p.x()) + PI;
+
+    let u: f64 = phi / (2.0*PI);
+    let v: f64 = theta / PI;
+    Vec3::new(u, v, 0.0)
 }
 
 impl Sphere {
@@ -83,6 +93,7 @@ impl Hittable for Sphere {
         rec.p = r.at(rec.t);
         let outward_normal = (rec.p - self.center(r.time)) /  self.radius;
         rec.set_face_normal(r, &outward_normal);
+        rec.uvw = get_sphere_uvw(&outward_normal);
         rec.mat = self.mat.clone();
 
         return true;

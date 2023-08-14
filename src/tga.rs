@@ -1,5 +1,5 @@
 use std::fs::File;
-use std::io::Write;
+use std::io::{Write, Read};
 use std::mem;
 use std::path::PathBuf;
 use std::slice;
@@ -11,7 +11,6 @@ unsafe fn struct_to_u8_slice<T>(s: &T) -> &[u8] {
     slice::from_raw_parts(data_ptr, mem::size_of::<T>())
 }
 
-
 #[repr(C, packed)]
 #[derive(Default)]
 struct TgaColorMapSpec {
@@ -22,7 +21,7 @@ struct TgaColorMapSpec {
 
 #[repr(C, packed)]
 #[derive(Default)]
-struct TgaImageSpec{
+struct TgaImageSpec {
     x_origin: u16,
     y_origin: u16,
     image_width: u16,
@@ -33,12 +32,12 @@ struct TgaImageSpec{
 
 #[repr(C, packed)]
 #[derive(Default)]
-struct TgaHeader{
-    id_legnth :u8,
-    color_map_type : u8,
-    image_type : u8,
+struct TgaHeader {
+    id_legnth: u8,
+    color_map_type: u8,
+    image_type: u8,
     color_map_spec: TgaColorMapSpec,
-    image_spec : TgaImageSpec,
+    image_spec: TgaImageSpec,
 }
 
 fn get_tga_header(width: i32, height: i32) -> TgaHeader {
@@ -73,6 +72,33 @@ pub fn write_tga_file(width: i32, height: i32, image_data: &Vec<u8>, file_path: 
 
     file.write_all(header_bytes)?;
     file.write_all(image_data)?;
+
+    Ok(())
+}
+
+pub fn read_tga_file(file_path: &PathBuf, out_image_data: &mut Vec<u8>, out_width: &mut usize, out_height: &mut usize, out_bpp: &mut usize) -> Result<(), std::io::Error> {
+
+    let mut file: File = File::open(file_path)?;
+
+    let mut header: TgaHeader = TgaHeader::default();
+    let header_slice: &mut [u8] = unsafe {slice::from_raw_parts_mut(&mut header as *mut _ as *mut u8, mem::size_of::<TgaHeader>() ) };
+    file.read_exact(header_slice)?;
+    
+    let width: usize = header.image_spec.image_width as usize;
+    let height: usize = header.image_spec.image_height as usize;
+
+    let bytes_per_pixel: usize = (header.image_spec.pixel_depth / 8) as usize;
+
+    let length: usize = width * height * bytes_per_pixel;
+
+    out_image_data.resize(length, 0);
+
+    file.read_exact(out_image_data)?;
+
+    *out_width = width;
+    *out_height = height;
+    *out_bpp = bytes_per_pixel;
+
 
     Ok(())
 }

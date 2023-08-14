@@ -135,7 +135,7 @@ impl Camera {
         let mut attenuation: Color = Color::zero();
         let mat: &Arc<dyn Material + Sync> = rec.mat.as_ref().unwrap();
 
-        let light_color: Color = mat.emitted();
+        let light_color: Color = mat.emitted(&rec);
         if !mat.scatter(r, &rec, &mut attenuation, &mut scattered) {
             return light_color;
         }

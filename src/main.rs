@@ -85,7 +85,7 @@ fn create_cornell_box(args: &Args) -> (HittableList, Camera) {
     cam.image_height= args.height;
     cam.samples_per_pixel = args.spp;
     cam.max_depth = args.max_depth;
-    cam.background = Color::new(0.7, 0.8, 1.0);
+    cam.background = Color::new(0.7, 0.8, 1.0) * 0.5;
     cam.initialize();
     (world, cam)
 }
